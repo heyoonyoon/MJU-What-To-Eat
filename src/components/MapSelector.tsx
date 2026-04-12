@@ -1,0 +1,129 @@
+import { useState, useMemo } from "react";
+import type { Restaurant } from "../data";
+import { restaurants } from "../data";
+import { MapZone } from "./MapZone";
+import { FilterPanel } from "./FilterPanel";
+import { RollButton } from "./RollButton";
+import { ResultGrid } from "./ResultGrid";
+
+export default function MapSelector() {
+  const [filters, setFilters] = useState<{
+    type: string[];
+    cat: string[];
+    zone: string[];
+    solo: string[];
+  }>({
+    type: [],
+    cat: ["전체"],
+    zone: [], // 아무 구역도 선택되지 않은 상태로 시작
+    solo: [],
+  });
+  const [picked, setPicked] = useState<Restaurant[]>([]);
+  const [hasRolled, setHasRolled] = useState(false);
+
+  // ── 필터링 로직 ──
+  const filteredList = useMemo<Restaurant[]>(() => {
+    return restaurants.filter((r) => {
+      const typeOk = filters.type.length === 0 || filters.type.includes(r.type);
+      const catOk =
+        filters.cat.length === 0 ||
+        filters.cat.includes("전체") ||
+        filters.cat.includes(r.category);
+      const zoneOk =
+        filters.zone.length === 0 ? false : filters.zone.includes(r.zone); // zone이 선택되지 않았으면 아무것도 통과하지 않음
+      const soloOk = filters.solo.length === 0 ? true : r.solo;
+      return typeOk && catOk && zoneOk && soloOk;
+    });
+  }, [filters]);
+
+  // ── 필터 토글 핸들러 ──
+  const toggleFilter = (
+    key: "type" | "cat" | "zone" | "solo",
+    value: string,
+  ) => {
+    setFilters((prev) => {
+      // 음식 필터에서 "전체" 선택 시 특별 처리
+      if (key === "cat" && value === "전체") {
+        return {
+          ...prev,
+          [key]: prev[key].includes(value) ? [] : ["전체"],
+        };
+      }
+
+      // 음식 필터에서 다른 항목 선택 시 "전체" 제거
+      if (key === "cat" && value !== "전체") {
+        const newCat = prev[key].includes(value)
+          ? prev[key].filter((v) => v !== value)
+          : [...prev[key].filter((v) => v !== "전체"), value];
+        return { ...prev, [key]: newCat };
+      }
+
+      // 기본 토글 로직
+      return {
+        ...prev,
+        [key]: prev[key].includes(value)
+          ? prev[key].filter((v) => v !== value)
+          : [...prev[key], value],
+      };
+    });
+  };
+
+  // ── 필터 초기화 ──
+  const resetFilters = () => {
+    setFilters({ type: [], cat: ["전체"], zone: [], solo: [] });
+  };
+
+  // ── 랜덤 선택 ──
+  const handleRoll = () => {
+    const shuffled = [...filteredList].sort(() => 0.5 - Math.random());
+    setPicked(shuffled.slice(0, 1)); // 한 개만 선택
+    setHasRolled(true);
+  };
+
+  // ── 전체 조회 ──
+  const handleViewAll = () => {
+    setPicked(filteredList); // 필터에 맞는 모든 결과 표시
+    setHasRolled(true);
+  };
+
+  return (
+    <div
+      className="bg-gray-50 text-gray-900 font-sans pb-28"
+      style={{
+        minHeight: "100dvh",
+        paddingBottom: "calc(env(safe-area-inset-bottom, 1.5rem) + 9rem)",
+      }}
+    >
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 text-center py-8 shadow-sm">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+          명지대 맛집 룰렛
+        </h1>
+        <p className="text-xs text-gray-500 mt-2">
+          해당 서비스는 명월 이하람님, 김태균님, 최연서님께서 <br />
+          제작하신 지도 데이터로 만들었습니다.
+        </p>
+      </header>
+
+      {/* Map Zone */}
+      <MapZone filters={filters} onToggleFilter={toggleFilter} />
+
+      {/* Filter Panel */}
+      <FilterPanel
+        filters={filters}
+        onToggleFilter={toggleFilter}
+        onReset={resetFilters}
+      />
+
+      {/* Roll Button */}
+      <RollButton
+        countAvailable={filteredList.length}
+        onRoll={handleRoll}
+        onViewAll={handleViewAll}
+      />
+
+      {/* Result Grid */}
+      <ResultGrid picked={picked} hasRolled={hasRolled} />
+    </div>
+  );
+}
