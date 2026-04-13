@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 // --- [1] 데이터 및 상수 정의 ---
 const COLORS = {
   BLUE: "#5CBFDF",
@@ -81,19 +79,20 @@ interface MapZoneProps {
 }
 
 // --- [3] 메인 컴포넌트 ---
-export function MapZone({ filters, onToggleFilter }: MapZoneProps) {
-  const [hoveredZoneName, setHoveredZoneName] = useState<string | null>(null);
+export function MapZone({ filters }: MapZoneProps) {
+  // const [hoveredZoneName, setHoveredZoneName] = useState<string | null>(null);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 mt-6 font-sans">
+    <div className="w-full max-w-3xl mx-auto px-4 mt-6 font-sans">
       {/* 상태 확인용 UI (개발 다 끝나면 지워도 됨) */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative p-6">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative p-6">
         {/* 안내 메시지 */}
         <div className="text-center mb-4 text-gray-600 text-sm font-medium">
           지도를 클릭하여 구역을 선택하세요
         </div>
         {/* 네가 만든 원본 비율 그대로 적용 */}
         <svg
+          className="w-full"
           width="100%"
           height="auto"
           viewBox="0 0 772 562"
@@ -111,15 +110,6 @@ export function MapZone({ filters, onToggleFilter }: MapZoneProps) {
               <path
                 key={zone.id}
                 d={zone.path}
-                onClick={
-                  zone.clickable
-                    ? () => onToggleFilter("zone", zone.name)
-                    : undefined
-                }
-                onMouseEnter={() =>
-                  zone.clickable && setHoveredZoneName(zone.name)
-                }
-                onMouseLeave={() => setHoveredZoneName(null)}
                 fill={
                   zone.name === "명지대"
                     ? COLORS.CAMPUS
@@ -127,13 +117,7 @@ export function MapZone({ filters, onToggleFilter }: MapZoneProps) {
                       ? COLORS[zone.colorKey]
                       : COLORS.EMPTY
                 }
-                className={`transition-all duration-300 ${
-                  hoveredZoneName === zone.name ? "brightness-95" : ""
-                } ${
-                  zone.clickable
-                    ? "cursor-pointer hover:brightness-95"
-                    : "cursor-default"
-                }`}
+                className="transition-all duration-300 cursor-default"
               />
             ))}
           </g>

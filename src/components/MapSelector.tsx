@@ -1,10 +1,10 @@
 import { useState, useMemo } from "react";
 import type { Restaurant } from "../data";
 import { restaurants } from "../data";
-import { MapZone } from "./MapZone";
 import { FilterPanel } from "./FilterPanel";
 import { RollButton } from "./RollButton";
 import { ResultGrid } from "./ResultGrid";
+import NaverMap from "./NaverMap";
 
 export default function MapSelector() {
   const [filters, setFilters] = useState<{
@@ -20,6 +20,10 @@ export default function MapSelector() {
   });
   const [picked, setPicked] = useState<Restaurant[]>([]);
   const [hasRolled, setHasRolled] = useState(false);
+  const [mapDisplayList, setMapDisplayList] =
+    useState<Restaurant[]>(restaurants);
+  const [cardDisplayList, setCardDisplayList] =
+    useState<Restaurant[]>(restaurants);
 
   // ── 필터링 로직 ──
   const filteredList = useMemo<Restaurant[]>(() => {
@@ -29,8 +33,7 @@ export default function MapSelector() {
         filters.cat.length === 0 ||
         filters.cat.includes("전체") ||
         filters.cat.includes(r.category);
-      const zoneOk =
-        filters.zone.length === 0 ? false : filters.zone.includes(r.zone); // zone이 선택되지 않았으면 아무것도 통과하지 않음
+      const zoneOk = filters.zone.length === 0 || filters.zone.includes(r.zone); // 구역 선택 없이도 조회 가능
       const soloOk = filters.solo.length === 0 ? true : r.solo;
       return typeOk && catOk && zoneOk && soloOk;
     });
@@ -41,6 +44,8 @@ export default function MapSelector() {
     key: "type" | "cat" | "zone" | "solo",
     value: string,
   ) => {
+    setPicked([]);
+    setHasRolled(false);
     setFilters((prev) => {
       // 음식 필터에서 "전체" 선택 시 특별 처리
       if (key === "cat" && value === "전체") {
@@ -76,13 +81,18 @@ export default function MapSelector() {
   // ── 랜덤 선택 ──
   const handleRoll = () => {
     const shuffled = [...filteredList].sort(() => 0.5 - Math.random());
-    setPicked(shuffled.slice(0, 1)); // 한 개만 선택
+    const result = shuffled.slice(0, 1);
+    setPicked(result);
+    setMapDisplayList(result);
+    setCardDisplayList(result);
     setHasRolled(true);
   };
 
   // ── 전체 조회 ──
   const handleViewAll = () => {
-    setPicked(filteredList); // 필터에 맞는 모든 결과 표시
+    setPicked(filteredList);
+    setMapDisplayList(filteredList);
+    setCardDisplayList(filteredList);
     setHasRolled(true);
   };
 
@@ -99,22 +109,16 @@ export default function MapSelector() {
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
           명지대 오늘 뭐 먹지?
         </h1>
-        <p className="text-xs text-gray-500 mt-2">
-          해당 서비스는 명월 이하람님, 김태균님, 최연서님께서 <br />
-          제작하신 지도 데이터로 만들었습니다.
-        </p>
       </header>
 
       {/* Map Zone */}
-      <MapZone filters={filters} onToggleFilter={toggleFilter} />
-
+      {/* <MapZone filters={filters} onToggleFilter={toggleFilter} /> */}
       {/* Filter Panel */}
       <FilterPanel
         filters={filters}
         onToggleFilter={toggleFilter}
         onReset={resetFilters}
       />
-
       {/* Roll Button */}
       <RollButton
         countAvailable={filteredList.length}
@@ -122,8 +126,13 @@ export default function MapSelector() {
         onViewAll={handleViewAll}
       />
 
+      <NaverMap displayList={mapDisplayList} />
       {/* Result Grid */}
-      <ResultGrid picked={picked} hasRolled={hasRolled} />
+      <ResultGrid
+        picked={picked}
+        hasRolled={hasRolled}
+        filteredList={cardDisplayList}
+      />
     </div>
   );
 }
