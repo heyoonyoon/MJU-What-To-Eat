@@ -97,7 +97,7 @@ export default function MapSelector() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 text-center py-8 shadow-sm">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-          명지대 맛집 룰렛
+          명지대 오늘 뭐 먹지?
         </h1>
         <p className="text-xs text-gray-500 mt-2">
           해당 서비스는 명월 이하람님, 김태균님, 최연서님께서 <br />

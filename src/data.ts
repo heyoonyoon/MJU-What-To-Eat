@@ -434,7 +434,7 @@ export const restaurants: Restaurant[] = [
     name: "만평우동 명지대점",
     category: "일식",
     type: "식사",
-    zone: "정문",
+    zone: "C",
     solo: true,
   },
   {
