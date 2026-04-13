@@ -24,12 +24,6 @@ const NaverMap: React.FC<NaverMapProps> = ({ displayList }) => {
   useEffect(() => {
     displayListRef.current = displayList;
 
-    console.log(
-      "NaverMap received displayList:",
-
-      displayList?.map((r) => r.name),
-    );
-
     if (markerMapRef.current.size === 0) return; // 마커 아직 없으면 스킵
 
     const visibleSet = new Set((displayList ?? restaurants).map((r) => r.id));
