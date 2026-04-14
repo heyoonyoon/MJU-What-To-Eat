@@ -1,16 +1,20 @@
 import React, { useEffect, useRef } from "react";
 
-import type { Restaurant } from "../data";
+import type { Restaurant } from "../data2";
 
-import { restaurants } from "../data";
-
-import heartIcon from "../assets/markers/heart.png";
+import { restaurants } from "../data2";
 
 interface NaverMapProps {
   displayList?: Restaurant[];
+  focusTarget?: Restaurant | null;
+  onMarkerClick?: (restaurant: Restaurant) => void;
 }
 
-const NaverMap: React.FC<NaverMapProps> = ({ displayList }) => {
+const NaverMap: React.FC<NaverMapProps> = ({
+  displayList,
+  focusTarget,
+  onMarkerClick,
+}) => {
   const mapElement = useRef<HTMLDivElement | null>(null);
 
   const mapRef = useRef<naver.maps.Map | null>(null);
@@ -33,6 +37,16 @@ const NaverMap: React.FC<NaverMapProps> = ({ displayList }) => {
     });
   }, [displayList]);
 
+  // focusTarget 변경 시 해당 위치로 이동
+  useEffect(() => {
+    if (!focusTarget || !mapRef.current) return;
+    if (!focusTarget.lat || !focusTarget.lng) return;
+
+    mapRef.current.panTo(
+      new window.naver.maps.LatLng(focusTarget.lat, focusTarget.lng),
+    );
+  }, [focusTarget]);
+
   // 지도 + 마커 초기화 (최초 1회)
 
   useEffect(() => {
@@ -49,7 +63,7 @@ const NaverMap: React.FC<NaverMapProps> = ({ displayList }) => {
 
       scrollWheel: true,
 
-      zoomControl: true,
+      zoomControl: false,
 
       mapTypeControl: false,
 
@@ -75,43 +89,19 @@ const NaverMap: React.FC<NaverMapProps> = ({ displayList }) => {
         map: initialVisible.has(shop.id) ? map : null,
 
         icon: {
-          content: `
-
-<div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
-
-<img src="${heartIcon}" style="width: 24px; height: 24px;" />
-
-<div style="
-
-background: white;
-
-padding: 3px 7px;
-
-border-radius: 20px;
-
-border: 1.5px solid #FF4D4D;
-
-font-size: 11px;
-
-font-weight: 800;
-
-color: #333;
-
-white-space: nowrap;
-
-margin-top: 2px;
-
-box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-
-">
-
-${shop.name}
-
-</div>
-
-</div>
-
-`,
+          content: (() => {
+            const primaryMenuNames = shop.menus
+              .filter((m) => m.isPrimary)
+              .map((m) => m.name.ko)
+              .join(", ");
+            const priceText =
+              shop.minPrice != null
+                ? `${shop.minPrice.toLocaleString()}원~`
+                : "";
+            const line1 = priceText;
+            const line2 = primaryMenuNames;
+            return `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;"><div style="background:white;padding:4px 8px;border-radius:10px;border:1.5px solid #FF4D4D;font-size:11px;font-weight:700;color:#333;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.15);line-height:1.5;">${line1 ? `<div style="color:#FF4D4D;">${line1}</div>` : ""}${line2 ? `<div>${line2}</div>` : ""}</div></div>`;
+          })(),
 
           anchor: new window.naver.maps.Point(12, 12),
         },
@@ -119,6 +109,7 @@ ${shop.name}
 
       window.naver.maps.Event.addListener(marker, "click", () => {
         map.panTo(marker.getPosition());
+        onMarkerClick?.(shop);
       });
 
       markerMapRef.current.set(shop.id, marker);
@@ -126,22 +117,15 @@ ${shop.name}
   }, []);
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 mt-6">
-      <div
-        ref={mapElement}
-        style={{
-          width: "100%",
-
-          height: "calc(100vh - 200px)",
-
-          borderRadius: "20px",
-
-          overflow: "hidden",
-
-          boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-        }}
-      />
-    </div>
+    <div
+      ref={mapElement}
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+      }}
+    />
   );
 };
 

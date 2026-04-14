@@ -1,6 +1,66 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // src/data.ts
 
+// export interface Restaurant {
+//   id: string;
+//   name: string;
+//   category:
+//     | "한식"
+//     | "일식"
+//     | "중식"
+//     | "간편식·분식"
+//     | "고기"
+//     | "양식·아시안"
+//     | "주류"
+//     | "카페·디저트"
+//     | "종합"; // '종합' 카테고리 추가 (필요시)
+//   type: "식사" | "술집" | "카페";
+//   zone: "정문" | "A" | "B" | "C";
+//   solo: boolean;
+//   address: string;
+//   roadAddress: string;
+//   mapx: string;
+//   mapy: string;
+//   lat: number;
+//   lng: number;
+
+//   // --- 신규 추가 필드 ---
+
+//   /** 네이버 지도 연결 링크 */
+//   naverMapUrl: string;
+
+//   /** * 가게 단위의 핵심 필터 상태
+//    * (지도에서 전체 가게를 필터링할 때 사용)
+//    */
+//   filters: {
+//     isCheap: boolean;        // 저렴이 (8000원 전후)
+//     isHighProtein: boolean;  // 고단백
+//     isHealthy: boolean;      // 건강식
+//   };
+
+//   /** * 다국어 지원을 위한 메뉴 리스트
+//    * (확장성을 위해 배열로 구성)
+//    */
+//   menus: Menu[];
+// }
+
+// export interface Menu {
+//   menuId: string;
+//   isPrimary: boolean; // 지도 마커에 표시할 대표 메뉴 여부
+//   price: number;      // 최저가 및 필터링용 가격
+
+//   /** 다국어 지원 메뉴명 */
+//   name: {
+//     ko: string;
+//     en: string;
+//     zh: string;
+//     ja: string;
+//   };
+
+//   /** 메뉴별 세부 태그 (선택 사항) */
+//   tags?: string[];
+// }
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -12,8 +72,7 @@ export interface Restaurant {
     | "고기"
     | "양식·아시안"
     | "주류"
-    | "카페·디저트"
-    | "종합";
+    | "카페·디저트";
   type: "식사" | "술집" | "카페";
   zone: "정문" | "A" | "B" | "C";
   solo: boolean; // 혼밥 가능 여부 (true: 혼밥 가능, false: 혼밥 어려움)
