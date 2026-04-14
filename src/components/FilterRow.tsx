@@ -1,8 +1,13 @@
+interface FilterItem {
+  key: string;
+  label: string;
+}
+
 interface FilterRowProps {
   label: string;
-  items: string[];
+  items: FilterItem[];
   activeItems: string[];
-  onToggle: (value: string) => void;
+  onToggle: (key: string) => void;
 }
 
 export function FilterRow({
@@ -17,17 +22,17 @@ export function FilterRow({
         {label}
       </span>
       <div className="flex flex-wrap gap-2">
-        {items.map((item: string) => (
+        {items.map((item) => (
           <button
-            key={item}
-            onClick={() => onToggle(item)}
+            key={item.key}
+            onClick={() => onToggle(item.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
-              activeItems.includes(item)
+              activeItems.includes(item.key)
                 ? "bg-[#0066ff] border-[#0066ff] text-white shadow-sm"
                 : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
             }`}
           >
-            {item}
+            {item.label}
           </button>
         ))}
       </div>

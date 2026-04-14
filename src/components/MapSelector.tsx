@@ -1,12 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import type { Restaurant } from "../data2";
 import { restaurants } from "../data2";
 import { FilterPanel } from "./FilterPanel";
 import NaverMap from "./NaverMap";
 import filterIcon from "../assets/filter.png";
+import { useLang } from "../LangContext";
+import { t, LANG_LABELS, LANGS, CAT_KEY_MAP, TAG_KEY_MAP } from "../i18n";
+import type { Lang } from "../i18n";
 
 export default function MapSelector() {
+  const { lang, setLang } = useLang();
+  const T = t[lang];
+
   const [filters, setFilters] = useState<{
     type: string[];
     cat: string[];
@@ -28,15 +34,26 @@ export default function MapSelector() {
   const [focusTarget, setFocusTarget] = useState<Restaurant | null>(null);
   const [selectedRestaurant, setSelectedRestaurant] =
     useState<Restaurant | null>(null);
-  // 모달 적용 버튼을 눌렀을 때 확정되는 필터 라벨
   const [appliedLabels, setAppliedLabels] = useState<string[]>(["전체"]);
   const [showHint1, setShowHint1] = useState(true);
   const [copyToasts, setCopyToasts] = useState<
     { id: number; text: string; fading: boolean }[]
   >([]);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const scrollHintEnabledRef = useRef(false);
   const modalScrollRef = useRef<HTMLDivElement | null>(null);
+  const headerRowRef = useRef<HTMLDivElement | null>(null);
+  const titleIslandRef = useRef<HTMLDivElement | null>(null);
+  const [snackbarWidth, setSnackbarWidth] = useState<number | undefined>(
+    undefined,
+  );
+
+  useEffect(() => {
+    if (titleIslandRef.current) {
+      setSnackbarWidth(titleIslandRef.current.offsetWidth);
+    }
+  }, [lang]);
 
   const handleModalScroll = useCallback(() => {
     if (!scrollHintEnabledRef.current) return;
@@ -45,7 +62,7 @@ export default function MapSelector() {
     const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
     setIsScrolledToBottom(atBottom);
   }, []);
-  // 모달 내부에서만 쓰는 임시 필터 (적용 전까지 홈에 반영 안 됨)
+
   const [draftFilters, setDraftFilters] = useState<{
     type: string[];
     cat: string[];
@@ -69,22 +86,21 @@ export default function MapSelector() {
     const id = Date.now();
     setCopyToasts((prev) => [
       ...prev,
-      { id, text: `"${label}" 복사됨`, fading: false },
+      { id, text: `"${label}" ${T.copied}`, fading: false },
     ]);
     setTimeout(
       () =>
         setCopyToasts((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, fading: true } : t)),
+          prev.map((tt) => (tt.id === id ? { ...tt, fading: true } : tt)),
         ),
       1600,
     );
     setTimeout(
-      () => setCopyToasts((prev) => prev.filter((t) => t.id !== id)),
+      () => setCopyToasts((prev) => prev.filter((tt) => tt.id !== id)),
       2000,
     );
   };
 
-  // ── 필터링 로직 (확정된 filters 기준) ──
   const filteredList = useMemo<Restaurant[]>(() => {
     return restaurants.filter((r) => {
       const typeOk = filters.type.length === 0 || filters.type.includes(r.type);
@@ -96,7 +112,6 @@ export default function MapSelector() {
     });
   }, [filters]);
 
-  // 모달 미리보기용 필터링 (draftFilters 기준)
   const draftFilteredList = useMemo<Restaurant[]>(() => {
     return restaurants.filter((r) => {
       const typeOk =
@@ -111,13 +126,11 @@ export default function MapSelector() {
     });
   }, [draftFilters]);
 
-  // ── 모달 열기 (현재 확정 필터를 draft로 복사) ──
   const openFilter = () => {
     setDraftFilters(filters);
     setFilterOpen(true);
   };
 
-  // ── 모달 내 필터 토글 핸들러 (draft만 변경) ──
   const toggleFilter = (
     key: "type" | "cat" | "zone" | "tags",
     value: string,
@@ -141,12 +154,10 @@ export default function MapSelector() {
     });
   };
 
-  // ── 필터 초기화 (draft만) ──
   const resetFilters = () => {
     setDraftFilters({ type: [], cat: ["전체"], zone: [], tags: [] });
   };
 
-  // ── 랜덤 선택 ──
   const handleRoll = () => {
     const shuffled = [...filteredList].sort(() => 0.5 - Math.random());
     const result = shuffled.slice(0, 1);
@@ -157,7 +168,6 @@ export default function MapSelector() {
     setFocusTarget(result[0] ?? null);
   };
 
-  // ── 전체 조회 ──
   const handleViewAll = () => {
     setPicked(filteredList);
     setMapDisplayList(filteredList);
@@ -165,11 +175,30 @@ export default function MapSelector() {
     setHasRolled(true);
   };
 
-  // 활성 필터 수 (확정된 filters 기준, 홈 뱃지용)
   const activeFilterCount =
     (filters.cat.includes("전체") || filters.cat.length === 0
       ? 0
       : filters.cat.length) + filters.tags.length;
+
+  // Translate a label (Korean category/tag key) to current language
+  const translateLabel = (label: string): string => {
+    const catKey = CAT_KEY_MAP[label];
+    if (catKey) return T[catKey] ?? label;
+    const tagKey = TAG_KEY_MAP[label];
+    if (tagKey) return T[tagKey] ?? label;
+    return label;
+  };
+
+  const tagSet = new Set(["👤 혼밥", "💸 저렴이", "💪 고단백", "🥗 건강식"]);
+
+  // Menu name display by lang
+  const menuName = (name: {
+    ko: string;
+    en: string;
+    zh: string;
+    ja: string;
+    vi: string;
+  }) => name[lang] || name.ko;
 
   return (
     <div style={{ position: "fixed", inset: 0 }}>
@@ -190,112 +219,222 @@ export default function MapSelector() {
         }}
       />
 
-      {/* 상단 안내 스낵바 */}
-      {showHint1 && (
-        <div
-          style={{
-            position: "absolute",
-            top: "4.5rem",
-            left: "1rem",
-            zIndex: 100,
-            display: "flex",
-            flexDirection: "column",
-            gap: "6px",
-          }}
-        >
-          {showHint1 && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "16px",
-                background: "rgba(0,0,0,0.45)",
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-                borderRadius: "12px",
-                padding: "10px 16px",
-                color: "white",
-                fontSize: "clamp(13px, 1.8vw, 18px)",
-                fontWeight: 400,
-                whiteSpace: "nowrap",
-              }}
-            >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "10px" }}
-              >
-                <span style={{ fontSize: "clamp(16px, 2vw, 22px)" }}>⚠️</span>
-                <span>핀이 겹치면 지도를 확대하세요</span>
-              </div>
-              <button
-                onClick={() => setShowHint1(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "rgba(255,255,255,0.7)",
-                  fontSize: "16px",
-                  cursor: "pointer",
-                  lineHeight: 1,
-                  padding: "0",
-                  flexShrink: 0,
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 상단 헤더 */}
+      {/* 상단 헤더 + 스낵바 묶음 */}
       <div
         style={{
           position: "absolute",
           top: "1rem",
           left: "1rem",
-          zIndex: 100,
+          zIndex: 160,
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-start",
           gap: "6px",
         }}
       >
+        {/* 헤더 행 */}
         <div
+          ref={headerRowRef}
           style={{
-            background: "rgba(255,255,255,0.85)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.6)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-            borderRadius: "14px",
-            padding: "8px 14px",
             display: "flex",
-            alignItems: "center",
-            gap: "10px",
+            flexDirection: "row",
+            alignItems: "flex-start",
+            gap: "8px",
           }}
         >
-          <span style={{ fontSize: "15px", fontWeight: 800, color: "#111" }}>
-            뭐먹지 명지대
-          </span>
-          <a
-            href="https://www.instagram.com/_yoonyoon_1/"
-            target="_blank"
-            rel="noopener noreferrer"
+          {/* 서비스명 아일랜드 */}
+          <div
+            ref={titleIslandRef}
             style={{
-              fontSize: "11px",
-              fontWeight: 600,
-              color: "#0066ff",
-              background: "rgba(0,102,255,0.08)",
-              border: "1px solid rgba(0,102,255,0.2)",
-              borderRadius: "8px",
-              padding: "3px 8px",
-              textDecoration: "none",
-              whiteSpace: "nowrap",
+              background: "rgba(255,255,255,0.85)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              border: "1px solid rgba(255,255,255,0.6)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+              borderRadius: "14px",
+              padding: "8px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
             }}
           >
-            문의하기
-          </a>
+            <span style={{ fontSize: "15px", fontWeight: 800, color: "#111" }}>
+              {T.appTitle}
+            </span>
+            <a
+              href="https://www.instagram.com/_yoonyoon_1/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "#0066ff",
+                background: "rgba(0,102,255,0.08)",
+                border: "1px solid rgba(0,102,255,0.2)",
+                borderRadius: "8px",
+                padding: "3px 8px",
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {T.contact}
+            </a>
+          </div>
+
+          {/* 언어 선택 아일랜드 */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setLangMenuOpen((v) => !v)}
+              title="언어 선택 / Language"
+              style={{
+                fontSize: "20px",
+                lineHeight: 1,
+                padding: "7px 10px",
+                background: "rgba(255,255,255,0.85)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.6)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                borderRadius: "14px",
+                cursor: "pointer",
+              }}
+            >
+              {LANG_LABELS[lang]}
+            </button>
+            {langMenuOpen && (
+              <>
+                {/* 닫기 오버레이 */}
+                <div
+                  onClick={() => setLangMenuOpen(false)}
+                  style={{
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: 150,
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 6px)",
+                    left: 0,
+                    zIndex: 151,
+                    background: "rgba(255,255,255,0.97)",
+                    backdropFilter: "blur(10px)",
+                    WebkitBackdropFilter: "blur(10px)",
+                    borderRadius: "12px",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                    border: "1px solid rgba(255,255,255,0.6)",
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  {LANGS.map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => {
+                        setLang(l as Lang);
+                        setLangMenuOpen(false);
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        padding: "9px 16px",
+                        background:
+                          l === lang ? "rgba(0,102,255,0.08)" : "none",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        fontWeight: l === lang ? 700 : 400,
+                        color: l === lang ? "#0066ff" : "#333",
+                        whiteSpace: "nowrap",
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{ fontSize: "18px" }}>{LANG_LABELS[l]}</span>
+                      <span>
+                        {l === "ko"
+                          ? "한국어"
+                          : l === "en"
+                            ? "English"
+                            : l === "zh"
+                              ? "中文"
+                              : l === "ja"
+                                ? "日本語"
+                                : "Tiếng Việt"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* 스낵바 — 헤더 행 너비로 제한 */}
+        {showHint1 && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: "12px",
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              borderRadius: "12px",
+              padding: "10px 16px",
+              color: "white",
+              fontSize: "clamp(13px, 1.8vw, 18px)",
+              fontWeight: 400,
+              whiteSpace: "normal",
+              wordBreak: "keep-all",
+              width: snackbarWidth,
+              boxSizing: "border-box",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "8px",
+                minWidth: 0,
+              }}
+            >
+              <span
+                style={{ fontSize: "clamp(16px, 2vw, 22px)", flexShrink: 0 }}
+              >
+                ⚠️
+              </span>
+              <span
+                style={{
+                  whiteSpace: "normal",
+                  wordBreak:
+                    lang === "ja" || lang === "zh" ? "break-all" : "keep-all",
+                  overflowWrap: "break-word",
+                }}
+              >
+                {T.hintPin}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowHint1(false)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "rgba(255,255,255,0.7)",
+                fontSize: "16px",
+                cursor: "pointer",
+                lineHeight: 1,
+                padding: "0",
+                flexShrink: 0,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 우상단 필터 아이콘 + 적용된 필터 */}
@@ -333,7 +472,7 @@ export default function MapSelector() {
         >
           <img src={filterIcon} style={{ width: "22px", height: "22px" }} />
           <span style={{ fontSize: "11px", fontWeight: 600, color: "#333" }}>
-            필터
+            {T.filter}
           </span>
           {activeFilterCount > 0 && (
             <span
@@ -374,15 +513,9 @@ export default function MapSelector() {
           }}
         >
           <span style={{ fontSize: "11px", fontWeight: 600, color: "#888" }}>
-            적용된 필터
+            {T.appliedFilter}
           </span>
           {(() => {
-            const tagSet = new Set([
-              "👤 혼밥",
-              "💸 저렴이",
-              "💪 고단백",
-              "🥗 건강식",
-            ]);
             const catLabels = appliedLabels.filter((l) => !tagSet.has(l));
             const tagLabels = appliedLabels.filter((l) => tagSet.has(l));
             return (
@@ -407,7 +540,7 @@ export default function MapSelector() {
                         padding: "4px 10px",
                       }}
                     >
-                      {label}
+                      {translateLabel(label)}
                     </span>
                   ))}
                 </div>
@@ -440,7 +573,7 @@ export default function MapSelector() {
                         padding: "4px 10px",
                       }}
                     >
-                      {label}
+                      {translateLabel(label)}
                     </span>
                   ))}
                 </div>
@@ -450,7 +583,7 @@ export default function MapSelector() {
         </div>
       </div>
 
-      {/* 하단 랜덤 / 전체 보기 버튼 */}
+      {/* 하단 랜덤 버튼 */}
       <div
         style={{
           position: "absolute",
@@ -479,9 +612,9 @@ export default function MapSelector() {
             gap: "3px",
           }}
         >
-          <span>🎲 1개 뽑기</span>
+          <span>{T.roll}</span>
           <span style={{ fontSize: "12px", fontWeight: 500, opacity: 0.85 }}>
-            필터 적용됨
+            {T.filterApplied}
           </span>
         </button>
       </div>
@@ -489,7 +622,6 @@ export default function MapSelector() {
       {/* 필터 모달 */}
       {filterOpen && (
         <>
-          {/* 딤 배경 */}
           <div
             onClick={() => setFilterOpen(false)}
             style={{
@@ -499,8 +631,6 @@ export default function MapSelector() {
               background: "rgba(0,0,0,0.35)",
             }}
           />
-
-          {/* 모달 본체 */}
           <div
             style={{
               position: "absolute",
@@ -519,7 +649,6 @@ export default function MapSelector() {
               padding: "24px",
             }}
           >
-            {/* 모달 헤더 */}
             <div
               style={{
                 display: "flex",
@@ -531,7 +660,7 @@ export default function MapSelector() {
               <span
                 style={{ fontSize: "17px", fontWeight: 700, color: "#111" }}
               >
-                필터
+                {T.filterTitle}
               </span>
               <button
                 onClick={() => setFilterOpen(false)}
@@ -571,7 +700,7 @@ export default function MapSelector() {
                   cursor: "pointer",
                 }}
               >
-                초기화
+                {T.reset}
               </button>
               <button
                 onClick={() => {
@@ -605,7 +734,7 @@ export default function MapSelector() {
                     draftFilteredList.length === 0 ? "not-allowed" : "pointer",
                 }}
               >
-                적용 ({draftFilteredList.length}개)
+                {T.apply} ({draftFilteredList.length})
               </button>
             </div>
           </div>
@@ -751,7 +880,7 @@ export default function MapSelector() {
                       cursor: "pointer",
                     }}
                   >
-                    복사
+                    {T.copy}
                   </button>
                 </div>
                 <span
@@ -764,7 +893,7 @@ export default function MapSelector() {
                     padding: "2px 8px",
                   }}
                 >
-                  {selectedRestaurant.category}
+                  {translateLabel(selectedRestaurant.category)}
                 </span>
               </div>
               <button
@@ -824,7 +953,7 @@ export default function MapSelector() {
                         padding: "3px 9px",
                       }}
                     >
-                      👤 혼밥 가능
+                      {T.tagSoloLabel}
                     </span>
                   )}
                   {selectedRestaurant.filters.isCheap && (
@@ -838,7 +967,7 @@ export default function MapSelector() {
                         padding: "3px 9px",
                       }}
                     >
-                      💸 저렴이
+                      {T.tagCheapLabel}
                     </span>
                   )}
                   {selectedRestaurant.filters.isHighProtein && (
@@ -852,7 +981,7 @@ export default function MapSelector() {
                         padding: "3px 9px",
                       }}
                     >
-                      💪 고단백
+                      {T.tagProteinLabel}
                     </span>
                   )}
                   {selectedRestaurant.filters.isHealthy && (
@@ -866,7 +995,7 @@ export default function MapSelector() {
                         padding: "3px 9px",
                       }}
                     >
-                      🥗 건강식
+                      {T.tagHealthyLabel}
                     </span>
                   )}
                 </div>
@@ -888,12 +1017,13 @@ export default function MapSelector() {
                   <span
                     style={{ fontSize: "12px", fontWeight: 600, color: "#888" }}
                   >
-                    최저가
+                    {T.minPrice}
                   </span>
                   <span
                     style={{ fontSize: "16px", fontWeight: 800, color: "#111" }}
                   >
-                    {selectedRestaurant.minPrice.toLocaleString()}원~
+                    {selectedRestaurant.minPrice.toLocaleString()}
+                    {T.priceUnit}
                   </span>
                 </div>
               )}
@@ -909,7 +1039,7 @@ export default function MapSelector() {
                       marginBottom: "8px",
                     }}
                   >
-                    메뉴
+                    {T.menu}
                   </div>
                   <div
                     style={{
@@ -941,7 +1071,7 @@ export default function MapSelector() {
                               color: "#111",
                             }}
                           >
-                            {menu.name.ko}
+                            {menuName(menu.name)}
                           </span>
                           {menu.isPrimary && (
                             <span
@@ -955,7 +1085,7 @@ export default function MapSelector() {
                                 padding: "1px 5px",
                               }}
                             >
-                              대표
+                              {T.representative}
                             </span>
                           )}
                           {menu.tags && menu.tags.length > 0 && (
@@ -994,7 +1124,8 @@ export default function MapSelector() {
                               marginLeft: "10px",
                             }}
                           >
-                            {menu.price.toLocaleString()}원
+                            {menu.price.toLocaleString()}
+                            {T.priceUnitPlain}
                           </span>
                         )}
                       </div>
@@ -1043,7 +1174,7 @@ export default function MapSelector() {
                         color: "#888",
                       }}
                     >
-                      메뉴가 더 있어요
+                      {T.moreMenu}
                     </span>
                     <span style={{ fontSize: "14px", opacity: 0.6 }}>↓</span>
                   </div>
@@ -1073,7 +1204,7 @@ export default function MapSelector() {
                       marginBottom: "2px",
                     }}
                   >
-                    주소
+                    {T.address}
                   </div>
                   <div>{selectedRestaurant.roadAddress}</div>
                 </div>
@@ -1096,7 +1227,7 @@ export default function MapSelector() {
                     cursor: "pointer",
                   }}
                 >
-                  복사
+                  {T.copy}
                 </button>
               </div>
 
@@ -1117,7 +1248,7 @@ export default function MapSelector() {
                   textDecoration: "none",
                 }}
               >
-                네이버지도에서 보기
+                {T.naverMap}
               </a>
             </div>
           </div>
