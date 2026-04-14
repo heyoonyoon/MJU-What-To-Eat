@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import type { Restaurant } from "../data2";
 import { restaurants } from "../data2";
@@ -24,11 +23,7 @@ export default function MapSelector() {
     zone: [],
     tags: [],
   });
-  const [picked, setPicked] = useState<Restaurant[]>([]);
-  const [hasRolled, setHasRolled] = useState(true);
   const [mapDisplayList, setMapDisplayList] =
-    useState<Restaurant[]>(restaurants);
-  const [cardDisplayList, setCardDisplayList] =
     useState<Restaurant[]>(restaurants);
   const [filterOpen, setFilterOpen] = useState(false);
   const [focusTarget, setFocusTarget] = useState<Restaurant | null>(null);
@@ -161,18 +156,8 @@ export default function MapSelector() {
   const handleRoll = () => {
     const shuffled = [...filteredList].sort(() => 0.5 - Math.random());
     const result = shuffled.slice(0, 1);
-    setPicked(result);
     setMapDisplayList(result);
-    setCardDisplayList(result);
-    setHasRolled(true);
     setFocusTarget(result[0] ?? null);
-  };
-
-  const handleViewAll = () => {
-    setPicked(filteredList);
-    setMapDisplayList(filteredList);
-    setCardDisplayList(filteredList);
-    setHasRolled(true);
   };
 
   const activeFilterCount =
@@ -712,9 +697,6 @@ export default function MapSelector() {
                       : [...draftFilters.cat, ...draftFilters.tags];
                   setAppliedLabels(labels);
                   setMapDisplayList(draftFilteredList);
-                  setCardDisplayList(draftFilteredList);
-                  setHasRolled(true);
-                  setPicked([]);
                   setFilterOpen(false);
                 }}
                 disabled={draftFilteredList.length === 0}
