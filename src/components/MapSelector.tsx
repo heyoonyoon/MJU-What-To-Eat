@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import type { Restaurant } from "../data2";
 import { restaurants } from "../data2";
 import NaverMap from "./NaverMap";
+import type { MarkerModeKey, MarkerModes } from "./NaverMap";
 import { useLang } from "../LangContext";
 import { t, LANG_LABELS, LANGS, CAT_KEY_MAP, TAG_KEY_MAP } from "../i18n";
 import type { Lang } from "../i18n";
@@ -26,33 +27,128 @@ export default function MapSelector() {
   const [focusTarget, setFocusTarget] = useState<Restaurant | null>(null);
   const [selectedRestaurant, setSelectedRestaurant] =
     useState<Restaurant | null>(null);
-  const [showHint1, setShowHint1] = useState(true);
+  const [showHint1, setShowHint1] = useState(false);
   const [copyToasts, setCopyToasts] = useState<
     { id: number; text: string; fading: boolean }[]
   >([]);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
-  const scrollHintEnabledRef = useRef(false);
-  const modalScrollRef = useRef<HTMLDivElement | null>(null);
-  const headerRowRef = useRef<HTMLDivElement | null>(null);
-  const titleIslandRef = useRef<HTMLDivElement | null>(null);
-  const [snackbarWidth, setSnackbarWidth] = useState<number | undefined>(
-    undefined,
-  );
+  const [searchQuery, setSearchQuery] = useState(""); // 실제 적용된 검색어
+  const [searchInput, setSearchInput] = useState(""); // 모달 내 입력 중인 값
+  const [searchTarget, setSearchTarget] = useState<"name" | "menu">("menu");
+  const [appliedTarget, setAppliedTarget] = useState<"name" | "menu">("menu");
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const searchModalRef = useRef<HTMLDivElement | null>(null);
+  const dragStartY = useRef<number | null>(null);
+  const dragCurrentY = useRef<number>(0);
+  const dragLastY = useRef<number>(0);
+  const dragLastTime = useRef<number>(0);
+  const dragVelocity = useRef<number>(0);
+  const searchLockRef = useRef(false);
 
-  useEffect(() => {
-    if (titleIslandRef.current) {
-      setSnackbarWidth(titleIslandRef.current.offsetWidth);
+  const closeSearchModal = useCallback(() => {
+    const el = searchModalRef.current;
+    if (!el) {
+      setSearchModalOpen(false);
+      return;
     }
-  }, [lang]);
-
-  const handleModalScroll = useCallback(() => {
-    if (!scrollHintEnabledRef.current) return;
-    const el = modalScrollRef.current;
-    if (!el) return;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
-    setIsScrolledToBottom(atBottom);
+    el.style.transition = "transform 0.12s ease, opacity 0.1s ease";
+    el.style.transform = "translateY(-16px)";
+    el.style.opacity = "0";
+    setTimeout(() => setSearchModalOpen(false), 120);
   }, []);
+
+  const dragStartX = useRef<number>(0);
+  const dragCurrentX = useRef<number>(0);
+
+  // Y축: 일반 저항 / X축: 강한 저항 (살짝만 움직임)
+  const resistY = (delta: number) => {
+    const sign = delta < 0 ? -1 : 1;
+    return sign * Math.pow(Math.abs(delta), 0.65) * 2.2;
+  };
+  const resistX = (delta: number) => {
+    const sign = delta < 0 ? -1 : 1;
+    return sign * Math.pow(Math.abs(delta), 0.4) * 1.2;
+  };
+
+  const onDragStart = (clientX: number, clientY: number) => {
+    const el = searchModalRef.current;
+    if (el) {
+      el.style.animation = "none";
+      el.style.transition = "none";
+      el.style.transform = "translateY(0)";
+      el.style.opacity = "1";
+    }
+    dragStartX.current = clientX;
+    dragStartY.current = clientY;
+    dragCurrentX.current = 0;
+    dragCurrentY.current = 0;
+    dragLastY.current = clientY;
+    dragLastTime.current = Date.now();
+    dragVelocity.current = 0;
+  };
+
+  const onDragMove = (clientX: number, clientY: number) => {
+    if (dragStartY.current === null) return;
+    const now = Date.now();
+    const dt = now - dragLastTime.current;
+    if (dt > 0) {
+      dragVelocity.current = (clientY - dragLastY.current) / dt;
+    }
+    dragLastY.current = clientY;
+    dragLastTime.current = now;
+
+    const deltaY = clientY - dragStartY.current;
+    const deltaX = clientX - dragStartX.current;
+    dragCurrentY.current = deltaY;
+    dragCurrentX.current = deltaX;
+
+    if (searchModalRef.current) {
+      const ty = resistY(deltaY);
+      const tx = resistX(deltaX);
+      searchModalRef.current.style.transform = `translateX(${tx}px) translateY(${ty}px)`;
+      searchModalRef.current.style.opacity = String(
+        Math.max(0, 1 - Math.abs(ty) / 180),
+      );
+    }
+  };
+
+  const onDragEnd = () => {
+    if (dragStartY.current === null) return;
+    dragStartY.current = null;
+
+    const velocity = dragVelocity.current; // px/ms
+    const delta = dragCurrentY.current;
+    const VELOCITY_THRESHOLD = 0.5; // px/ms 이상이면 빠른 드래그로 판단
+    const DISTANCE_THRESHOLD = 80;
+
+    const shouldDismiss =
+      Math.abs(velocity) > VELOCITY_THRESHOLD ||
+      Math.abs(delta) > DISTANCE_THRESHOLD;
+
+    if (shouldDismiss) {
+      // 드래그 방향으로 날아가며 닫기
+      const direction = delta >= 0 ? 1 : -1;
+      const el = searchModalRef.current;
+      if (el) {
+        el.style.transition = "transform 0.12s ease, opacity 0.1s ease";
+        el.style.transform = `translateY(${direction * 120}px)`;
+        el.style.opacity = "0";
+      }
+      setTimeout(() => setSearchModalOpen(false), 120);
+    } else {
+      // 제자리로 스프링 복귀 (X, Y 모두)
+      if (searchModalRef.current) {
+        searchModalRef.current.style.transition =
+          "transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease";
+        searchModalRef.current.style.transform = "translateX(0) translateY(0)";
+        searchModalRef.current.style.opacity = "1";
+      }
+    }
+  };
+  const [markerModes, setMarkerModes] = useState<MarkerModes>(
+    new Set(["price"]),
+  );
 
   const applyTagFilter = (r: Restaurant, tags: string[]) => {
     if (tags.length === 0) return true;
@@ -65,13 +161,60 @@ export default function MapSelector() {
     });
   };
 
-  const showCopyToast = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
+  const applySearch = useCallback(
+    (query: string, target: "name" | "menu"): number => {
+      const q = query.trim().toLowerCase();
+      const matched = q
+        ? restaurants.filter((r) => {
+            const typeOk =
+              filters.type.length === 0 || filters.type.includes(r.type);
+            const catOk =
+              filters.cat.includes("전체") || filters.cat.includes(r.category);
+            const zoneOk =
+              filters.zone.length === 0 || filters.zone.includes(r.zone);
+            const tagsOk = applyTagFilter(r, filters.tags);
+            if (!typeOk || !catOk || !zoneOk || !tagsOk) return false;
+            if (target === "name") return r.name.toLowerCase().includes(q);
+            return r.menus.some((m) =>
+              Object.values(m.name).some((v) => v.toLowerCase().includes(q)),
+            );
+          })
+        : restaurants;
+
+      setSearchQuery(query);
+      setAppliedTarget(target);
+      if (query) {
+        const modeKey: MarkerModeKey = target === "menu" ? "menu" : "name";
+        setMarkerModes((prev) => {
+          if (prev.has(modeKey)) return prev;
+          return new Set([...prev, modeKey]);
+        });
+        if (matched.length > 0) {
+          setFocusTarget(matched[0]);
+        }
+      }
+      return matched.length;
+    },
+    [filters],
+  );
+
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const scrollHintEnabledRef = useRef(false);
+  const modalScrollRef = useRef<HTMLDivElement | null>(null);
+  const headerRowRef = useRef<HTMLDivElement | null>(null);
+  const titleIslandRef = useRef<HTMLDivElement | null>(null);
+
+  const handleModalScroll = useCallback(() => {
+    if (!scrollHintEnabledRef.current) return;
+    const el = modalScrollRef.current;
+    if (!el) return;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
+    setIsScrolledToBottom(atBottom);
+  }, []);
+
+  const showToast = useCallback((message: string) => {
     const id = Date.now();
-    setCopyToasts((prev) => [
-      ...prev,
-      { id, text: `"${label}" ${T.copied}`, fading: false },
-    ]);
+    setCopyToasts((prev) => [...prev, { id, text: message, fading: false }]);
     setTimeout(
       () =>
         setCopyToasts((prev) =>
@@ -83,18 +226,34 @@ export default function MapSelector() {
       () => setCopyToasts((prev) => prev.filter((tt) => tt.id !== id)),
       2000,
     );
+  }, []);
+
+  const showCopyToast = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    showToast(`"${label}" ${T.copied}`);
   };
 
   const filteredList = useMemo<Restaurant[]>(() => {
+    const q = searchQuery.trim().toLowerCase();
     return restaurants.filter((r) => {
       const typeOk = filters.type.length === 0 || filters.type.includes(r.type);
       const catOk =
         filters.cat.includes("전체") || filters.cat.includes(r.category);
       const zoneOk = filters.zone.length === 0 || filters.zone.includes(r.zone);
       const tagsOk = applyTagFilter(r, filters.tags);
-      return typeOk && catOk && zoneOk && tagsOk;
+      if (!typeOk || !catOk || !zoneOk || !tagsOk) return false;
+      if (!q) return true;
+      if (appliedTarget === "name") return r.name.toLowerCase().includes(q);
+      return r.menus.some((m) =>
+        Object.values(m.name).some((v) => v.toLowerCase().includes(q)),
+      );
     });
-  }, [filters]);
+  }, [filters, searchQuery, appliedTarget]);
+
+  // 검색어/필터 변경시 지도 핀 즉시 업데이트
+  useEffect(() => {
+    setMapDisplayList(filteredList);
+  }, [filteredList]);
 
   const toggleFilterDirect = (
     key: "type" | "cat" | "zone" | "tags",
@@ -117,16 +276,6 @@ export default function MapSelector() {
             : [...prev[key], value],
         };
       }
-      // 즉시 지도 업데이트
-      const newList = restaurants.filter((r) => {
-        const typeOk = next.type.length === 0 || next.type.includes(r.type);
-        const catOk =
-          next.cat.includes("전체") || next.cat.includes(r.category);
-        const zoneOk = next.zone.length === 0 || next.zone.includes(r.zone);
-        const tagsOk = applyTagFilter(r, next.tags);
-        return typeOk && catOk && zoneOk && tagsOk;
-      });
-      setMapDisplayList(newList);
       return next;
     });
   };
@@ -161,6 +310,7 @@ export default function MapSelector() {
       <NaverMap
         displayList={mapDisplayList}
         focusTarget={focusTarget}
+        markerModes={markerModes}
         onMarkerClick={(r) => {
           setSelectedRestaurant(r);
           scrollHintEnabledRef.current = false;
@@ -181,6 +331,7 @@ export default function MapSelector() {
           position: "absolute",
           top: "1rem",
           left: "1rem",
+          right: "1rem",
           zIndex: 160,
           display: "flex",
           flexDirection: "column",
@@ -188,57 +339,78 @@ export default function MapSelector() {
           gap: "6px",
         }}
       >
-        {/* 헤더 행 */}
+        {/* 첫 번째 행: 검색바 + 언어아이콘 */}
         <div
           ref={headerRowRef}
           style={{
             display: "flex",
             flexDirection: "row",
-            alignItems: "flex-start",
+            alignItems: "center",
             gap: "8px",
+            width: "100%",
           }}
         >
-          {/* 서비스명 아일랜드 */}
-          <div
-            ref={titleIslandRef}
+          {/* 검색바 (클릭 시 모달 오픈) */}
+          <button
+            onClick={() => {
+              setSearchInput(searchQuery);
+              setSearchModalOpen(true);
+            }}
             style={{
-              background: "rgba(255,255,255,0.85)",
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              background: "rgba(255,255,255,0.92)",
               backdropFilter: "blur(10px)",
               WebkitBackdropFilter: "blur(10px)",
               border: "1px solid rgba(255,255,255,0.6)",
               boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
               borderRadius: "14px",
-              padding: "8px 14px",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
+              padding: "0 14px",
+              height: "40px",
+              cursor: "text",
+              textAlign: "left",
             }}
           >
-            <span style={{ fontSize: "15px", fontWeight: 800, color: "#111" }}>
-              {T.appTitle}
+            <span style={{ fontSize: "15px", opacity: 0.5, flexShrink: 0 }}>
+              🔍
             </span>
-            <a
-              href="https://www.instagram.com/_yoonyoon_1/"
-              target="_blank"
-              rel="noopener noreferrer"
+            <span
               style={{
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#0066ff",
-                background: "rgba(0,102,255,0.08)",
-                border: "1px solid rgba(0,102,255,0.2)",
-                borderRadius: "8px",
-                padding: "3px 8px",
-                textDecoration: "none",
+                flex: 1,
+                fontSize: "14px",
+                fontWeight: 500,
+                color: searchQuery ? "#111" : "#aaa",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
               }}
             >
-              {T.contact}
-            </a>
-          </div>
+              {searchQuery || T.searchPlaceholder}
+            </span>
+            {searchQuery && (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSearchQuery("");
+                  setSearchInput("");
+                }}
+                style={{
+                  fontSize: "14px",
+                  color: "#aaa",
+                  flexShrink: 0,
+                  lineHeight: 1,
+                  cursor: "pointer",
+                }}
+              >
+                ✕
+              </span>
+            )}
+          </button>
 
-          {/* 언어 선택 아일랜드 */}
-          <div style={{ position: "relative" }}>
+          {/* 언어 선택 아이콘 */}
+          <div style={{ position: "relative", flexShrink: 0 }}>
             <button
               onClick={() => setLangMenuOpen((v) => !v)}
               title="언어 선택 / Language"
@@ -246,6 +418,7 @@ export default function MapSelector() {
                 fontSize: "20px",
                 lineHeight: 1,
                 padding: "7px 10px",
+                height: "40px",
                 background: "rgba(255,255,255,0.85)",
                 backdropFilter: "blur(10px)",
                 WebkitBackdropFilter: "blur(10px)",
@@ -253,6 +426,8 @@ export default function MapSelector() {
                 boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
                 borderRadius: "14px",
                 cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
               }}
             >
               {LANG_LABELS[lang]}
@@ -272,7 +447,7 @@ export default function MapSelector() {
                   style={{
                     position: "absolute",
                     top: "calc(100% + 6px)",
-                    left: 0,
+                    right: 0,
                     zIndex: 151,
                     background: "rgba(255,255,255,0.97)",
                     backdropFilter: "blur(10px)",
@@ -328,6 +503,144 @@ export default function MapSelector() {
           </div>
         </div>
 
+        {/* 두 번째 행: 서비스명 아일랜드 + 마커 표시 모드 토글 */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "stretch",
+            gap: "8px",
+            width: "100%",
+          }}
+        >
+          {/* 서비스명 아일랜드 — 공간 부족 시 줄바꿈 */}
+          <div
+            ref={titleIslandRef}
+            style={{
+              background: "rgba(255,255,255,0.85)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              border: "1px solid rgba(255,255,255,0.6)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+              borderRadius: "14px",
+              padding: "8px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              flex: 1,
+              minWidth: 0,
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              style={{
+                fontSize: lang === "ko" ? "15px" : "11px",
+                fontWeight: 800,
+                color: "#111",
+                whiteSpace: "nowrap",
+                minWidth: 0,
+              }}
+            >
+              {T.appTitle}
+            </span>
+            <a
+              href="https://www.instagram.com/_yoonyoon_1/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "#0066ff",
+                background: "rgba(0,102,255,0.08)",
+                border: "1px solid rgba(0,102,255,0.2)",
+                borderRadius: "8px",
+                padding: "3px 8px",
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {T.contact}
+            </a>
+          </div>
+
+          {/* 마커 표시 모드 토글 — 오른쪽 고정 */}
+          <div
+            style={{
+              background: "rgba(255,255,255,0.88)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              borderRadius: "16px",
+              padding: "10px 14px",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              flexShrink: 0,
+              marginLeft: "auto",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 700,
+                color: "#888",
+                letterSpacing: "0.3px",
+                textTransform: "uppercase",
+              }}
+            >
+              {T.markerLabel}
+            </span>
+            <div style={{ display: "flex", flexDirection: "row", gap: "6px" }}>
+              {(["price", "menu", "name"] as MarkerModeKey[]).map((mode) => {
+                const base =
+                  mode === "price"
+                    ? T.markerPrice
+                    : mode === "menu"
+                      ? T.markerMenu
+                      : T.markerName;
+                const suffix = T.markerSuffix ? ` ${T.markerSuffix}` : "";
+                const label = base + suffix;
+                const isActive = markerModes.has(mode);
+                const isDisabled = isActive && markerModes.size === 1;
+                return (
+                  <button
+                    key={mode}
+                    disabled={isDisabled}
+                    onClick={() => {
+                      setMarkerModes((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(mode)) {
+                          next.delete(mode);
+                        } else {
+                          next.add(mode);
+                        }
+                        return next;
+                      });
+                    }}
+                    style={{
+                      padding: "6px 13px",
+                      borderRadius: "999px",
+                      border: isActive
+                        ? "1.5px solid #0066ff"
+                        : "1.5px solid #e0e0e0",
+                      background: isActive ? "#0066ff" : "white",
+                      color: isActive ? "white" : "#555",
+                      fontSize: "12px",
+                      fontWeight: isActive ? 700 : 500,
+                      cursor: isDisabled ? "not-allowed" : "pointer",
+                      whiteSpace: "nowrap",
+                      transition: "all 0.15s ease",
+                      opacity: isDisabled ? 0.45 : 1,
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
         {/* 스낵바 — 헤더 행 너비로 제한 */}
         {showHint1 && (
           <div
@@ -346,7 +659,7 @@ export default function MapSelector() {
               fontWeight: 400,
               whiteSpace: "normal",
               wordBreak: "keep-all",
-              width: snackbarWidth,
+              width: "100%",
               boxSizing: "border-box",
             }}
           >
@@ -404,41 +717,15 @@ export default function MapSelector() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "10px",
+          gap: "0",
           pointerEvents: "none",
           paddingBottom: "0",
         }}
       >
-        {/* 랜덤 버튼 */}
-        <button
-          onClick={handleRoll}
-          disabled={filteredList.length === 0}
-          style={{
-            padding: "10px 22px",
-            background:
-              filteredList.length === 0 ? "rgba(200,200,200,0.6)" : "#0066ff",
-            color: filteredList.length === 0 ? "#aaa" : "white",
-            border: "none",
-            borderRadius: "12px",
-            fontSize: "13px",
-            fontWeight: 600,
-            cursor: filteredList.length === 0 ? "not-allowed" : "pointer",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "3px",
-            pointerEvents: "auto",
-          }}
-        >
-          <span>{T.roll}</span>
-          <span style={{ fontSize: "12px", fontWeight: 500, opacity: 0.85 }}>
-            {T.filterApplied}
-          </span>
-        </button>
-
-        {/* 필터 칩 영역 — 흰색 배경 + 상단 그라데이션 */}
+        {/* 필터 칩 영역 — 흰색 배경 + 상단 그라데이션 + 뽑기 버튼 */}
         <div
           style={{
+            position: "relative",
             width: "100%",
             display: "flex",
             flexDirection: "column",
@@ -450,6 +737,38 @@ export default function MapSelector() {
             pointerEvents: "none",
           }}
         >
+          {/* 랜덤 버튼 — 그라데이션 위에 띄움 */}
+          <button
+            onClick={handleRoll}
+            disabled={filteredList.length === 0}
+            style={{
+              position: "absolute",
+              top: "0",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              padding: "8px 18px",
+              background:
+                filteredList.length === 0 ? "rgba(200,200,200,0.6)" : "#0066ff",
+              color: filteredList.length === 0 ? "#aaa" : "white",
+              border: "none",
+              borderRadius: "12px",
+              fontSize: "12px",
+              fontWeight: 600,
+              cursor: filteredList.length === 0 ? "not-allowed" : "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "3px",
+              pointerEvents: "auto",
+              whiteSpace: "nowrap",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+            }}
+          >
+            <span>{T.roll}</span>
+            <span style={{ fontSize: "12px", fontWeight: 500, opacity: 0.85 }}>
+              {T.filterApplied}
+            </span>
+          </button>
           {/* 카테고리 칩 행 */}
           <div
             style={{
@@ -575,6 +894,14 @@ export default function MapSelector() {
           60%  { opacity: 0; max-height: 60px; margin-bottom: 0px; padding-top: 10px; padding-bottom: 10px; }
           100% { opacity: 0; max-height: 0px;  margin-bottom: -6px; padding-top: 0px; padding-bottom: 0px; }
         }
+        @keyframes searchModalSlideDown {
+          from { opacity: 0; transform: translateY(-16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes searchModalSlideUp {
+          from { opacity: 1; transform: translateY(0); }
+          to   { opacity: 0; transform: translateY(-24px); }
+        }
       `}</style>
       <div
         style={{
@@ -617,6 +944,207 @@ export default function MapSelector() {
           </div>
         ))}
       </div>
+
+      {/* 검색 모달 */}
+      {searchModalOpen && (
+        <>
+          <div
+            onClick={closeSearchModal}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 200,
+              background: "rgba(0,0,0,0.25)",
+            }}
+          />
+          <div
+            ref={searchModalRef}
+            style={{
+              position: "absolute",
+              top: "1rem",
+              left: "1rem",
+              right: "1rem",
+              zIndex: 201,
+              background: "rgba(255,255,255,0.97)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              borderRadius: "20px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+              padding: "12px 16px 16px 16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              animation: "searchModalSlideDown 0.22s ease forwards",
+              touchAction: "none",
+            }}
+            onMouseDown={(e) => onDragStart(e.clientX, e.clientY)}
+            onMouseMove={(e) => {
+              if (dragStartY.current !== null) onDragMove(e.clientX, e.clientY);
+            }}
+            onMouseUp={onDragEnd}
+            onMouseLeave={onDragEnd}
+            onTouchStart={(e) =>
+              onDragStart(e.touches[0].clientX, e.touches[0].clientY)
+            }
+            onTouchMove={(e) =>
+              onDragMove(e.touches[0].clientX, e.touches[0].clientY)
+            }
+            onTouchEnd={onDragEnd}
+          >
+            {/* 상단 인디케이터 */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                cursor: "grab",
+              }}
+            >
+              <div
+                style={{
+                  width: "36px",
+                  height: "4px",
+                  borderRadius: "999px",
+                  background: "#d1d5db",
+                }}
+              />
+            </div>
+
+            {/* 검색 input */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "#f5f5f5",
+                borderRadius: "14px",
+                padding: "0 14px",
+                height: "44px",
+              }}
+            >
+              <span style={{ fontSize: "15px", opacity: 0.45, flexShrink: 0 }}>
+                🔍
+              </span>
+              <input
+                ref={searchInputRef}
+                type="text"
+                enterKeyHint="search"
+                inputMode="search"
+                autoFocus
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (searchLockRef.current) return;
+                    searchLockRef.current = true;
+                    setTimeout(() => {
+                      searchLockRef.current = false;
+                    }, 300);
+                    const count = applySearch(searchInput, searchTarget);
+                    if (count > 0) closeSearchModal();
+                    else showToast(T.searchNoResult);
+                  }
+                }}
+                placeholder={T.searchModalPlaceholder}
+                style={{
+                  flex: 1,
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                  fontSize: "15px",
+                  fontWeight: 500,
+                  color: "#111",
+                  minWidth: 0,
+                }}
+              />
+              {searchInput && (
+                <button
+                  onClick={() => {
+                    setSearchInput("");
+                    searchInputRef.current?.focus();
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "0",
+                    fontSize: "14px",
+                    color: "#aaa",
+                    flexShrink: 0,
+                    lineHeight: 1,
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* 가게명 / 메뉴명 선택 */}
+            <div style={{ display: "flex", gap: "8px" }}>
+              {(["menu", "name"] as const).map((target) => {
+                const label =
+                  target === "name" ? T.searchByName : T.searchByMenu;
+                const isActive = searchTarget === target;
+                return (
+                  <button
+                    key={target}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setSearchTarget(target)}
+                    style={{
+                      flex: 1,
+                      padding: "10px 0",
+                      borderRadius: "12px",
+                      border: isActive
+                        ? "1.5px solid #0066ff"
+                        : "1.5px solid #e0e0e0",
+                      background: isActive ? "rgba(0,102,255,0.07)" : "white",
+                      color: isActive ? "#0066ff" : "#555",
+                      fontSize: "14px",
+                      fontWeight: isActive ? 700 : 500,
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 검색 버튼 */}
+            <button
+              type="button"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.preventDefault();
+              }}
+              onClick={() => {
+                if (searchLockRef.current) return;
+                searchLockRef.current = true;
+                setTimeout(() => {
+                  searchLockRef.current = false;
+                }, 300);
+                const count = applySearch(searchInput, searchTarget);
+                if (count > 0) closeSearchModal();
+                else showToast(T.searchNoResult);
+              }}
+              style={{
+                width: "100%",
+                padding: "13px 0",
+                borderRadius: "12px",
+                border: "none",
+                background: "#0066ff",
+                color: "white",
+                fontSize: "15px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              {T.searchApply}
+            </button>
+          </div>
+        </>
+      )}
 
       {/* 가게 정보 모달 */}
       {selectedRestaurant && (
