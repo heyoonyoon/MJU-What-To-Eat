@@ -355,6 +355,21 @@ export default function MapSelector() {
         }}
       />
 
+      {/* 상단 흰색 그라데이션 */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "16px",
+          background:
+            "linear-gradient(to bottom, rgba(242,242,247,1) 0%, rgba(242,242,247,1) 40%, rgba(242,242,247,0.6) 70%, rgba(242,242,247,0) 100%)",
+          zIndex: 98,
+          pointerEvents: "none",
+        }}
+      />
+
       {/* 상단 헤더 + 스낵바 묶음 */}
       <div
         style={{
@@ -560,10 +575,11 @@ export default function MapSelector() {
               border: "1px solid rgba(255,255,255,0.6)",
               boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
               borderRadius: "14px",
-              padding: "8px 14px",
+              padding: "3px 10px",
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              justifyContent: "space-between",
+              gap: "8px",
               flex: 1,
               minWidth: 0,
               flexWrap: "wrap",
@@ -605,28 +621,30 @@ export default function MapSelector() {
               background: "rgba(255,255,255,0.88)",
               backdropFilter: "blur(14px)",
               WebkitBackdropFilter: "blur(14px)",
-              borderRadius: "16px",
-              padding: "10px 14px",
+              borderRadius: "14px",
+              padding: "5px 10px 6px",
               boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
+              border: "1px solid rgba(255,255,255,0.6)",
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
+              gap: "5px",
               flexShrink: 0,
               marginLeft: "auto",
             }}
           >
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "10px",
                 fontWeight: 700,
-                color: "#888",
-                letterSpacing: "0.3px",
+                color: "#aaa",
+                letterSpacing: "0.4px",
                 textTransform: "uppercase",
+                textAlign: "center",
               }}
             >
               {T.markerLabel}
             </span>
-            <div style={{ display: "flex", flexDirection: "row", gap: "6px" }}>
+            <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
               {(["price", "menu", "name"] as MarkerModeKey[]).map((mode) => {
                 const base =
                   mode === "price"
@@ -653,14 +671,16 @@ export default function MapSelector() {
                       });
                     }}
                     style={{
-                      padding: "8px 16px",
-                      borderRadius: "999px",
+                      padding: "3px 9px",
+                      borderRadius: "8px",
                       border: isActive
-                        ? "1.5px solid rgba(0,102,255,0.2)"
-                        : "1.5px solid #d1d5db",
-                      background: isActive ? "rgba(0,102,255,0.08)" : "white",
-                      color: isActive ? "#0066ff" : "#333",
-                      fontSize: "13px",
+                        ? "1.5px solid rgba(0,102,255,0.25)"
+                        : "1.5px solid #e5e7eb",
+                      background: isActive
+                        ? "rgba(0,102,255,0.08)"
+                        : "rgba(0,0,0,0.03)",
+                      color: isActive ? "#0066ff" : "#555",
+                      fontSize: "12px",
                       fontWeight: 600,
                       cursor: "pointer",
                       whiteSpace: "nowrap",
@@ -807,9 +827,9 @@ export default function MapSelector() {
             width: "100%",
             display: "flex",
             flexDirection: "column",
-            gap: "10px",
+            gap: "6px",
             paddingTop: "3rem",
-            paddingBottom: "2rem",
+            paddingBottom: window.innerWidth <= 400 ? "4px" : "2rem",
             background:
               "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 3rem)",
             pointerEvents: "none",
@@ -882,7 +902,7 @@ export default function MapSelector() {
                     key={item.key}
                     onClick={() => toggleFilterDirect("cat", item.key)}
                     style={{
-                      padding: "8px 16px",
+                      padding: "6px 14px",
                       borderRadius: "999px",
                       border: isActive
                         ? "1.5px solid rgba(0,102,255,0.2)"
@@ -921,6 +941,60 @@ export default function MapSelector() {
                 width: "max-content",
               }}
             >
+              {/* 전체해제 버튼 */}
+              {(() => {
+                const isActive = filters.tags.length > 0 || maxPrice !== null;
+                return (
+                  <button
+                    onClick={() => {
+                      if (!isActive) return;
+                      setFilters((prev) => ({ ...prev, tags: [] }));
+                      setMaxPrice(null);
+                    }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: "4px",
+                      padding: "6px 14px",
+                      borderRadius: "999px",
+                      border: isActive
+                        ? "1.5px solid #d1d5db"
+                        : "1.5px solid #e5e7eb",
+                      background: isActive ? "white" : "rgba(0,0,0,0.03)",
+                      color: isActive ? "#333" : "#bbb",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      cursor: isActive ? "pointer" : "default",
+                      whiteSpace: "nowrap",
+                      pointerEvents: "auto",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <g clipPath="url(#clip0_403_3590)">
+                        <path
+                          d="M21.9999 12C22.0077 14.3266 21.2068 16.5835 19.7342 18.3848C18.2616 20.186 16.2088 21.4195 13.9271 21.8742C11.6454 22.329 9.27662 21.9767 7.226 20.8776C5.17538 19.7786 3.57041 18.0011 2.68571 15.8493C1.80101 13.6975 1.69157 11.3051 2.37611 9.08149C3.06064 6.8579 4.49662 4.94129 6.43833 3.6596C8.38003 2.37791 10.7068 1.81081 13.0205 2.05532C15.3342 2.29983 17.491 3.34076 19.1219 5H14.9999V7H20.1429C20.6353 6.99947 21.1073 6.80365 21.4554 6.45551C21.8036 6.10737 21.9994 5.63535 21.9999 5.143V0H19.9999V3.078C17.9532 1.24945 15.3409 0.178752 12.5997 0.0448441C9.8584 -0.0890641 7.15421 0.721932 4.93904 2.34229C2.72388 3.96266 1.13196 6.29421 0.429326 8.94729C-0.273305 11.6004 -0.0440735 14.4142 1.07871 16.9186C2.2015 19.423 4.14981 21.4661 6.59803 22.7066C9.04625 23.947 11.846 24.3096 14.5295 23.7338C17.213 23.158 19.6175 21.6786 21.3412 19.5429C23.065 17.4072 24.0035 14.7445 23.9999 12H21.9999Z"
+                          fill={isActive ? "#333" : "#bbb"}
+                        />
+                      </g>
+                      <defs>
+                        <clipPath id="clip0_403_3590">
+                          <rect width="24" height="24" fill="white" />
+                        </clipPath>
+                      </defs>
+                    </svg>
+                    {T.clearFilter}
+                  </button>
+                );
+              })()}
+
               {/* 가격 필터 버튼 */}
               <div style={{ position: "relative" }}>
                 <button
@@ -943,7 +1017,7 @@ export default function MapSelector() {
                     }
                   }}
                   style={{
-                    padding: "8px 16px",
+                    padding: "6px 14px",
                     borderRadius: "999px",
                     border:
                       maxPrice !== null
@@ -1151,7 +1225,7 @@ export default function MapSelector() {
                     key={item.key}
                     onClick={() => toggleFilterDirect("tags", item.key)}
                     style={{
-                      padding: "8px 16px",
+                      padding: "6px 14px",
                       borderRadius: "999px",
                       border: isActive
                         ? "1.5px solid rgba(0,102,255,0.2)"
@@ -1347,7 +1421,7 @@ export default function MapSelector() {
                   border: "none",
                   outline: "none",
                   background: "transparent",
-                  fontSize: "15px",
+                  fontSize: "16px",
                   fontWeight: 500,
                   color: "#111",
                   minWidth: 0,
