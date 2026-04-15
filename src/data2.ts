@@ -881,7 +881,7 @@ export const restaurants: Restaurant[] = [
     menus: [
       {
         menuId: "1",
-        isPrimary: false,
+        isPrimary: true,
         price: 13000,
         name: {
           ko: "연어덮밥",
@@ -917,7 +917,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "4",
-        isPrimary: false,
+        isPrimary: true,
         price: 8000,
         name: {
           ko: "소고기덮밥",
@@ -929,7 +929,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "5",
-        isPrimary: false,
+        isPrimary: true,
         price: 8500,
         name: {
           ko: "부대(스팸,소세지)순두부탕",
@@ -941,7 +941,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "6",
-        isPrimary: false,
+        isPrimary: true,
         price: 8000,
         name: {
           ko: "참치순두부탕",
@@ -953,7 +953,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "7",
-        isPrimary: false,
+        isPrimary: true,
         price: 8000,
         name: {
           ko: "만두순두부탕",
@@ -984,7 +984,7 @@ export const restaurants: Restaurant[] = [
     menus: [
       {
         menuId: "1",
-        isPrimary: false,
+        isPrimary: true,
         price: 15000,
         name: {
           ko: "임연수구이",
@@ -996,7 +996,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "2",
-        isPrimary: false,
+        isPrimary: true,
         price: 13000,
         name: {
           ko: "고등어구이",
@@ -1008,7 +1008,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "3",
-        isPrimary: false,
+        isPrimary: true,
         price: 14000,
         name: {
           ko: "삼치구이",
@@ -1020,7 +1020,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "4",
-        isPrimary: false,
+        isPrimary: true,
         price: 8500,
         name: {
           ko: "얼큰돼지김치찌개",
@@ -1032,7 +1032,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "5",
-        isPrimary: false,
+        isPrimary: true,
         price: 9000,
         name: {
           ko: "해물순두부찌개",
@@ -1044,7 +1044,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "6",
-        isPrimary: false,
+        isPrimary: true,
         price: 9000,
         name: {
           ko: "제육볶음",
@@ -1068,7 +1068,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "8",
-        isPrimary: false,
+        isPrimary: true,
         price: 8000,
         name: {
           ko: "치즈돈까스",
@@ -1080,7 +1080,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "9",
-        isPrimary: false,
+        isPrimary: true,
         price: 8000,
         name: {
           ko: "생선까스",
@@ -1092,7 +1092,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "10",
-        isPrimary: false,
+        isPrimary: true,
         price: 10000,
         name: {
           ko: "모두모여까스",
@@ -1104,7 +1104,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "11",
-        isPrimary: false,
+        isPrimary: true,
         price: 8500,
         name: {
           ko: "돈김 (돈까스+김치볶음밥)",
@@ -1116,7 +1116,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "12",
-        isPrimary: false,
+        isPrimary: true,
         price: 9000,
         name: {
           ko: "치즈김 (치즈돈까스+김치볶음밥)",
@@ -1128,7 +1128,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "13",
-        isPrimary: false,
+        isPrimary: true,
         price: 8500,
         name: {
           ko: "생김 (생선까스+김치볶음밥)",
@@ -1159,7 +1159,7 @@ export const restaurants: Restaurant[] = [
     menus: [
       {
         menuId: "1",
-        isPrimary: false,
+        isPrimary: true,
         price: 7000,
         name: {
           ko: "제육덮밥",
@@ -1171,7 +1171,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "2",
-        isPrimary: false,
+        isPrimary: true,
         price: 7000,
         name: {
           ko: "김치볶음밥",
@@ -1183,7 +1183,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "3",
-        isPrimary: false,
+        isPrimary: true,
         price: 7000,
         name: {
           ko: "오므라이스",
@@ -1195,7 +1195,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "4",
-        isPrimary: false,
+        isPrimary: true,
         price: 8000,
         name: {
           ko: "오불덮밥",
@@ -1207,7 +1207,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "5",
-        isPrimary: false,
+        isPrimary: true,
         price: 6000,
         name: {
           ko: "순두부찌개",
@@ -1219,7 +1219,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "6",
-        isPrimary: false,
+        isPrimary: true,
         price: 7000,
         name: {
           ko: "순두부(만두/해물)",
@@ -1231,7 +1231,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "7",
-        isPrimary: false,
+        isPrimary: true,
         price: 7000,
         name: {
           ko: "김치찌개",
@@ -1243,7 +1243,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "8",
-        isPrimary: false,
+        isPrimary: true,
         price: 7000,
         name: {
           ko: "칼국수",
@@ -1255,7 +1255,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "9",
-        isPrimary: false,
+        isPrimary: true,
         price: 4000,
         name: {
           ko: "라면",
@@ -1267,7 +1267,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "10",
-        isPrimary: false,
+        isPrimary: true,
         price: 8000,
         name: {
           ko: "만두국",
@@ -1279,7 +1279,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "11",
-        isPrimary: false,
+        isPrimary: true,
         price: 7000,
         name: {
           ko: "된장찌개",
@@ -1377,7 +1377,7 @@ export const restaurants: Restaurant[] = [
     menus: [
       {
         menuId: "1",
-        isPrimary: false,
+        isPrimary: true,
         price: 9500,
         name: {
           ko: "우삼겹마라 덮밥",
@@ -1389,7 +1389,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "2",
-        isPrimary: false,
+        isPrimary: true,
         price: 9000,
         name: {
           ko: "직화 춘천닭갈비 덮밥",
@@ -1437,7 +1437,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "6",
-        isPrimary: false,
+        isPrimary: true,
         price: 6000,
         name: {
           ko: "스팸김치마요덮밥",
@@ -1449,7 +1449,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "7",
-        isPrimary: false,
+        isPrimary: true,
         price: 6000,
         name: {
           ko: "참치김치마요덮밥",
@@ -1461,7 +1461,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "8",
-        isPrimary: false,
+        isPrimary: true,
         price: 7000,
         name: {
           ko: "치킨김치마요덮밥",
@@ -1473,7 +1473,7 @@ export const restaurants: Restaurant[] = [
       },
       {
         menuId: "9",
-        isPrimary: false,
+        isPrimary: true,
         price: 4000,
         name: {
           ko: "숙주라면",
