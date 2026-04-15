@@ -33,6 +33,18 @@ export default function MapSelector() {
   >([]);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [langMenuVisible, setLangMenuVisible] = useState(false);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [priceSliderOpen, setPriceSliderOpen] = useState(false);
+  const [priceSliderVisible, setPriceSliderVisible] = useState(false);
+  const [sliderValue, setSliderValue] = useState(18000);
+  const PRICE_MIN = 4000;
+  const PRICE_MAX = 18000;
+  const priceButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [pricePopupPos, setPricePopupPos] = useState<{
+    bottom: number;
+    left: number;
+  }>({ bottom: 0, left: 0 });
   const [searchQuery, setSearchQuery] = useState(""); // 실제 적용된 검색어
   const [searchInput, setSearchInput] = useState(""); // 모달 내 입력 중인 값
   const [searchTarget, setSearchTarget] = useState<"name" | "menu">("menu");
@@ -45,6 +57,16 @@ export default function MapSelector() {
   const dragLastTime = useRef<number>(0);
   const dragVelocity = useRef<number>(0);
   const searchLockRef = useRef(false);
+
+  const openLangMenu = useCallback(() => {
+    setLangMenuOpen(true);
+    requestAnimationFrame(() => setLangMenuVisible(true));
+  }, []);
+
+  const closeLangMenu = useCallback(() => {
+    setLangMenuVisible(false);
+    setTimeout(() => setLangMenuOpen(false), 180);
+  }, []);
 
   const closeSearchModal = useCallback(() => {
     const el = searchModalRef.current;
@@ -154,11 +176,16 @@ export default function MapSelector() {
     if (tags.length === 0) return true;
     return tags.every((tag) => {
       if (tag === "👤 혼밥") return r.solo;
-      if (tag === "💸 저렴이") return r.filters.isCheap;
       if (tag === "💪 고단백") return r.filters.isHighProtein;
       if (tag === "🥗 건강식") return r.filters.isHealthy;
       return true;
     });
+  };
+
+  const applyPriceFilter = (r: Restaurant, mp: number | null) => {
+    if (mp === null) return true;
+    if (r.minPrice === null) return false;
+    return r.minPrice <= mp;
   };
 
   const applySearch = useCallback(
@@ -173,7 +200,9 @@ export default function MapSelector() {
             const zoneOk =
               filters.zone.length === 0 || filters.zone.includes(r.zone);
             const tagsOk = applyTagFilter(r, filters.tags);
-            if (!typeOk || !catOk || !zoneOk || !tagsOk) return false;
+            const priceOk = applyPriceFilter(r, maxPrice);
+            if (!typeOk || !catOk || !zoneOk || !tagsOk || !priceOk)
+              return false;
             if (target === "name") return r.name.toLowerCase().includes(q);
             return r.menus.some((m) =>
               Object.values(m.name).some((v) => v.toLowerCase().includes(q)),
@@ -195,7 +224,7 @@ export default function MapSelector() {
       }
       return matched.length;
     },
-    [filters],
+    [filters, maxPrice],
   );
 
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -241,14 +270,15 @@ export default function MapSelector() {
         filters.cat.includes("전체") || filters.cat.includes(r.category);
       const zoneOk = filters.zone.length === 0 || filters.zone.includes(r.zone);
       const tagsOk = applyTagFilter(r, filters.tags);
-      if (!typeOk || !catOk || !zoneOk || !tagsOk) return false;
+      const priceOk = applyPriceFilter(r, maxPrice);
+      if (!typeOk || !catOk || !zoneOk || !tagsOk || !priceOk) return false;
       if (!q) return true;
       if (appliedTarget === "name") return r.name.toLowerCase().includes(q);
       return r.menus.some((m) =>
         Object.values(m.name).some((v) => v.toLowerCase().includes(q)),
       );
     });
-  }, [filters, searchQuery, appliedTarget]);
+  }, [filters, maxPrice, searchQuery, appliedTarget]);
 
   // 검색어/필터 변경시 지도 핀 즉시 업데이트
   useEffect(() => {
@@ -412,7 +442,7 @@ export default function MapSelector() {
           {/* 언어 선택 아이콘 */}
           <div style={{ position: "relative", flexShrink: 0 }}>
             <button
-              onClick={() => setLangMenuOpen((v) => !v)}
+              onClick={() => (langMenuOpen ? closeLangMenu() : openLangMenu())}
               title="언어 선택 / Language"
               style={{
                 fontSize: "20px",
@@ -436,7 +466,7 @@ export default function MapSelector() {
               <>
                 {/* 닫기 오버레이 */}
                 <div
-                  onClick={() => setLangMenuOpen(false)}
+                  onClick={closeLangMenu}
                   style={{
                     position: "fixed",
                     inset: 0,
@@ -458,6 +488,13 @@ export default function MapSelector() {
                     overflow: "hidden",
                     display: "flex",
                     flexDirection: "column",
+                    opacity: langMenuVisible ? 1 : 0,
+                    transform: langMenuVisible
+                      ? "translateY(0) scale(1)"
+                      : "translateY(-8px) scale(0.96)",
+                    transformOrigin: "top right",
+                    transition:
+                      "opacity 0.18s cubic-bezier(0.4,0,0.2,1), transform 0.18s cubic-bezier(0.4,0,0.2,1)",
                   }}
                 >
                   {LANGS.map((l) => (
@@ -465,7 +502,7 @@ export default function MapSelector() {
                       key={l}
                       onClick={() => {
                         setLang(l as Lang);
-                        setLangMenuOpen(false);
+                        closeLangMenu();
                       }}
                       style={{
                         display: "flex",
@@ -537,7 +574,6 @@ export default function MapSelector() {
                 fontSize: lang === "ko" ? "15px" : "11px",
                 fontWeight: 800,
                 color: "#111",
-                whiteSpace: "nowrap",
                 minWidth: 0,
               }}
             >
@@ -601,15 +637,14 @@ export default function MapSelector() {
                 const suffix = T.markerSuffix ? ` ${T.markerSuffix}` : "";
                 const label = base + suffix;
                 const isActive = markerModes.has(mode);
-                const isDisabled = isActive && markerModes.size === 1;
                 return (
                   <button
                     key={mode}
-                    disabled={isDisabled}
                     onClick={() => {
                       setMarkerModes((prev) => {
                         const next = new Set(prev);
                         if (next.has(mode)) {
+                          if (next.size === 1) return prev;
                           next.delete(mode);
                         } else {
                           next.add(mode);
@@ -618,19 +653,18 @@ export default function MapSelector() {
                       });
                     }}
                     style={{
-                      padding: "6px 13px",
+                      padding: "8px 16px",
                       borderRadius: "999px",
                       border: isActive
-                        ? "1.5px solid #0066ff"
-                        : "1.5px solid #e0e0e0",
-                      background: isActive ? "#0066ff" : "white",
-                      color: isActive ? "white" : "#555",
-                      fontSize: "12px",
-                      fontWeight: isActive ? 700 : 500,
-                      cursor: isDisabled ? "not-allowed" : "pointer",
+                        ? "1.5px solid rgba(0,102,255,0.2)"
+                        : "1.5px solid #d1d5db",
+                      background: isActive ? "rgba(0,102,255,0.08)" : "white",
+                      color: isActive ? "#0066ff" : "#333",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      cursor: "pointer",
                       whiteSpace: "nowrap",
                       transition: "all 0.15s ease",
-                      opacity: isDisabled ? 0.45 : 1,
                     }}
                   >
                     {label}
@@ -640,6 +674,50 @@ export default function MapSelector() {
             </div>
           </div>
         </div>
+
+        {/* 검색어 위젯 */}
+        {searchQuery && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+              borderRadius: "12px",
+              padding: "10px 16px",
+              color: "white",
+              alignSelf: "center",
+              marginTop: "6px",
+              boxSizing: "border-box",
+            }}
+          >
+            <span style={{ fontSize: "13px", fontWeight: 400, color: "white" }}>
+              🔍 {appliedTarget === "menu" ? T.searchByMenu : T.searchByName}:{" "}
+              <strong>"{searchQuery}"</strong>
+            </span>
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setSearchInput("");
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "rgba(255,255,255,0.7)",
+                fontSize: "16px",
+                cursor: "pointer",
+                lineHeight: 1,
+                padding: "0",
+                flexShrink: 0,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* 스낵바 — 헤더 행 너비로 제한 */}
         {showHint1 && (
@@ -807,7 +885,7 @@ export default function MapSelector() {
                       padding: "8px 16px",
                       borderRadius: "999px",
                       border: isActive
-                        ? "1px solid rgba(0,102,255,0.2)"
+                        ? "1.5px solid rgba(0,102,255,0.2)"
                         : "1.5px solid #d1d5db",
                       background: isActive ? "rgba(0,102,255,0.08)" : "white",
                       color: isActive ? "#0066ff" : "#333",
@@ -843,9 +921,227 @@ export default function MapSelector() {
                 width: "max-content",
               }}
             >
+              {/* 가격 필터 버튼 */}
+              <div style={{ position: "relative" }}>
+                <button
+                  ref={priceButtonRef}
+                  onClick={() => {
+                    if (priceSliderOpen) {
+                      setPriceSliderVisible(false);
+                      setTimeout(() => setPriceSliderOpen(false), 180);
+                    } else {
+                      const rect =
+                        priceButtonRef.current?.getBoundingClientRect();
+                      if (rect) {
+                        setPricePopupPos({
+                          bottom: window.innerHeight - rect.top + 8,
+                          left: rect.left,
+                        });
+                      }
+                      setPriceSliderOpen(true);
+                      requestAnimationFrame(() => setPriceSliderVisible(true));
+                    }
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "999px",
+                    border:
+                      maxPrice !== null
+                        ? "1.5px solid rgba(0,102,255,0.2)"
+                        : "1.5px solid #d1d5db",
+                    background:
+                      maxPrice !== null ? "rgba(0,102,255,0.08)" : "white",
+                    color: maxPrice !== null ? "#0066ff" : "#333",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {maxPrice !== null
+                    ? `💰 ~${maxPrice.toLocaleString()}${T.priceUnitPlain}`
+                    : T.priceFilter}
+                </button>
+
+                {/* 슬라이더 팝업 */}
+                {priceSliderOpen && (
+                  <>
+                    <div
+                      onClick={() => {
+                        setPriceSliderVisible(false);
+                        setTimeout(() => setPriceSliderOpen(false), 180);
+                      }}
+                      style={{
+                        position: "fixed",
+                        inset: 0,
+                        zIndex: 200,
+                        pointerEvents: "auto",
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: "fixed",
+                        bottom: pricePopupPos.bottom,
+                        left: pricePopupPos.left,
+                        zIndex: 201,
+                        pointerEvents: "auto",
+                        background: "rgba(255,255,255,0.97)",
+                        backdropFilter: "blur(10px)",
+                        WebkitBackdropFilter: "blur(10px)",
+                        borderRadius: "16px",
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                        border: "1px solid rgba(255,255,255,0.6)",
+                        padding: "16px 20px",
+                        width: "260px",
+                        opacity: priceSliderVisible ? 1 : 0,
+                        transform: priceSliderVisible
+                          ? "translateY(0) scale(1)"
+                          : "translateY(8px) scale(0.96)",
+                        transformOrigin: "bottom left",
+                        transition:
+                          "opacity 0.18s cubic-bezier(0.4,0,0.2,1), transform 0.18s cubic-bezier(0.4,0,0.2,1)",
+                      }}
+                    >
+                      {/* 제목 */}
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: "#888",
+                          marginBottom: "14px",
+                        }}
+                      >
+                        {T.priceFilterLabel}
+                      </div>
+
+                      {/* 가격 강조 표시 */}
+                      <div style={{ textAlign: "center", marginBottom: "4px" }}>
+                        <span
+                          style={{
+                            fontSize: "28px",
+                            fontWeight: 900,
+                            color: "#0066ff",
+                          }}
+                        >
+                          {sliderValue.toLocaleString()}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "15px",
+                            fontWeight: 700,
+                            color: "#0066ff",
+                            marginLeft: "3px",
+                          }}
+                        >
+                          {T.priceUnitPlain}
+                        </span>
+                      </div>
+                      {/* 설명 문장 */}
+                      <div
+                        style={{
+                          textAlign: "center",
+                          fontSize: "12px",
+                          color: "#555",
+                          marginBottom: "14px",
+                        }}
+                      >
+                        최저가 {sliderValue.toLocaleString()}
+                        {T.priceUnitPlain} {T.priceFilterDesc}
+                      </div>
+
+                      {/* 슬라이더 */}
+                      <input
+                        type="range"
+                        min={PRICE_MIN}
+                        max={PRICE_MAX}
+                        step={500}
+                        value={sliderValue}
+                        onChange={(e) => setSliderValue(Number(e.target.value))}
+                        style={{
+                          width: "100%",
+                          accentColor: "#0066ff",
+                          cursor: "pointer",
+                        }}
+                      />
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "11px",
+                          color: "#bbb",
+                          marginTop: "4px",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        <span>
+                          {PRICE_MIN.toLocaleString()}
+                          {T.priceUnitPlain}
+                        </span>
+                        <span>
+                          {PRICE_MAX.toLocaleString()}
+                          {T.priceUnitPlain}
+                        </span>
+                      </div>
+
+                      {/* 전체 보기 버튼 */}
+                      {maxPrice !== null && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMaxPrice(null);
+                            setSliderValue(PRICE_MAX);
+                            setPriceSliderVisible(false);
+                            setTimeout(() => setPriceSliderOpen(false), 180);
+                          }}
+                          style={{
+                            width: "100%",
+                            marginTop: "6px",
+                            padding: "7px 0",
+                            borderRadius: "8px",
+                            border: "1.5px solid #e0e0e0",
+                            background: "white",
+                            color: "#888",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {T.priceFilterAll}
+                        </button>
+                      )}
+
+                      {/* 적용 버튼 */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMaxPrice(sliderValue);
+                          setPriceSliderVisible(false);
+                          setTimeout(() => setPriceSliderOpen(false), 180);
+                        }}
+                        style={{
+                          marginTop: "14px",
+                          width: "100%",
+                          padding: "10px 0",
+                          borderRadius: "10px",
+                          border: "none",
+                          background: "#0066ff",
+                          color: "white",
+                          fontSize: "14px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {T.apply}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* 나머지 태그 칩 */}
               {[
                 { key: "👤 혼밥", label: T.tagSolo },
-                { key: "💸 저렴이", label: T.tagCheap },
                 { key: "💪 고단백", label: T.tagProtein },
                 { key: "🥗 건강식", label: T.tagHealthy },
               ].map((item) => {
@@ -858,7 +1154,7 @@ export default function MapSelector() {
                       padding: "8px 16px",
                       borderRadius: "999px",
                       border: isActive
-                        ? "1px solid rgba(0,102,255,0.2)"
+                        ? "1.5px solid rgba(0,102,255,0.2)"
                         : "1.5px solid #d1d5db",
                       background: isActive ? "rgba(0,102,255,0.08)" : "white",
                       color: isActive ? "#0066ff" : "#333",
@@ -1079,8 +1375,35 @@ export default function MapSelector() {
               )}
             </div>
 
-            {/* 가게명 / 메뉴명 선택 */}
-            <div style={{ display: "flex", gap: "8px" }}>
+            {/* 가게명 / 메뉴명 선택 - 세그먼티드 컨트롤 */}
+            <div
+              style={{
+                display: "flex",
+                background: "#f0f0f5",
+                borderRadius: "10px",
+                padding: "3px",
+                position: "relative",
+              }}
+            >
+              {/* 슬라이딩 인디케이터 */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "3px",
+                  bottom: "3px",
+                  left: "3px",
+                  width: "calc(50% - 3px)",
+                  borderRadius: "8px",
+                  background: "white",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.13)",
+                  transform:
+                    searchTarget === "name"
+                      ? "translateX(100%)"
+                      : "translateX(0)",
+                  transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  pointerEvents: "none",
+                }}
+              />
               {(["menu", "name"] as const).map((target) => {
                 const label =
                   target === "name" ? T.searchByName : T.searchByMenu;
@@ -1093,17 +1416,17 @@ export default function MapSelector() {
                     onClick={() => setSearchTarget(target)}
                     style={{
                       flex: 1,
-                      padding: "10px 0",
-                      borderRadius: "12px",
-                      border: isActive
-                        ? "1.5px solid #0066ff"
-                        : "1.5px solid #e0e0e0",
-                      background: isActive ? "rgba(0,102,255,0.07)" : "white",
-                      color: isActive ? "#0066ff" : "#555",
+                      padding: "8px 0",
+                      borderRadius: "8px",
+                      border: "none",
+                      background: "transparent",
+                      color: isActive ? "#111" : "#888",
                       fontSize: "14px",
                       fontWeight: isActive ? 700 : 500,
                       cursor: "pointer",
-                      transition: "all 0.15s ease",
+                      transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      position: "relative",
+                      zIndex: 1,
                     }}
                   >
                     {label}

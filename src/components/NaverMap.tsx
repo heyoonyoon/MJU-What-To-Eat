@@ -26,12 +26,12 @@ function buildMarkerContent(shop: Restaurant, lang: Lang, modes: MarkerModes): s
 
   if (modes.has("price")) {
     const priceText = shop.minPrice != null
-      ? `<span style="color:#FF4D4D;">${shop.minPrice.toLocaleString()}${T.priceUnit}</span>`
+      ? `<span style="color:#0066ff;">${shop.minPrice.toLocaleString()}${T.priceUnit}</span>`
       : `<span style="color:#aaa;">${T.noPrice}</span>`;
     lines.push(priceText);
   }
   if (modes.has("name")) {
-    lines.push(`<span style="font-size:12px;font-weight:800;color:#111;letter-spacing:-0.3px;">${shop.name}</span>`);
+    lines.push(`<span style="font-size:12px;font-weight:500;color:#111;letter-spacing:-0.3px;">${shop.name}</span>`);
   }
   if (modes.has("menu")) {
     const menuText = shop.menus
@@ -42,7 +42,7 @@ function buildMarkerContent(shop: Restaurant, lang: Lang, modes: MarkerModes): s
   }
 
   const inner = lines.map((l) => `<div style="line-height:1.4;">${l}</div>`).join("");
-  return `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;"><div style="background:white;padding:4px 8px;border-radius:10px;border:1.5px solid #FF4D4D;font-size:11px;font-weight:700;color:#333;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.15);line-height:1.5;">${inner}</div></div>`;
+  return `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;"><div style="background:white;padding:4px 8px;border-radius:10px;border:1.5px solid #0066ff;font-size:11px;font-weight:700;color:#333;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.15);line-height:1.5;">${inner}</div></div>`;
 }
 
 const DEFAULT_MODES: MarkerModes = new Set(["price"]);
