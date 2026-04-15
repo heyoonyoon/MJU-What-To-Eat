@@ -1,9 +1,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import type { Restaurant } from "../data2";
 import { restaurants } from "../data2";
-import { FilterPanel } from "./FilterPanel";
 import NaverMap from "./NaverMap";
-import filterIcon from "../assets/filter.png";
 import { useLang } from "../LangContext";
 import { t, LANG_LABELS, LANGS, CAT_KEY_MAP, TAG_KEY_MAP } from "../i18n";
 import type { Lang } from "../i18n";
@@ -25,11 +23,9 @@ export default function MapSelector() {
   });
   const [mapDisplayList, setMapDisplayList] =
     useState<Restaurant[]>(restaurants);
-  const [filterOpen, setFilterOpen] = useState(false);
   const [focusTarget, setFocusTarget] = useState<Restaurant | null>(null);
   const [selectedRestaurant, setSelectedRestaurant] =
     useState<Restaurant | null>(null);
-  const [appliedLabels, setAppliedLabels] = useState<string[]>(["전체"]);
   const [showHint1, setShowHint1] = useState(true);
   const [copyToasts, setCopyToasts] = useState<
     { id: number; text: string; fading: boolean }[]
@@ -57,13 +53,6 @@ export default function MapSelector() {
     const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
     setIsScrolledToBottom(atBottom);
   }, []);
-
-  const [draftFilters, setDraftFilters] = useState<{
-    type: string[];
-    cat: string[];
-    zone: string[];
-    tags: string[];
-  }>({ type: [], cat: ["전체"], zone: [], tags: [] });
 
   const applyTagFilter = (r: Restaurant, tags: string[]) => {
     if (tags.length === 0) return true;
@@ -107,50 +96,39 @@ export default function MapSelector() {
     });
   }, [filters]);
 
-  const draftFilteredList = useMemo<Restaurant[]>(() => {
-    return restaurants.filter((r) => {
-      const typeOk =
-        draftFilters.type.length === 0 || draftFilters.type.includes(r.type);
-      const catOk =
-        draftFilters.cat.includes("전체") ||
-        draftFilters.cat.includes(r.category);
-      const zoneOk =
-        draftFilters.zone.length === 0 || draftFilters.zone.includes(r.zone);
-      const tagsOk = applyTagFilter(r, draftFilters.tags);
-      return typeOk && catOk && zoneOk && tagsOk;
-    });
-  }, [draftFilters]);
-
-  const openFilter = () => {
-    setDraftFilters(filters);
-    setFilterOpen(true);
-  };
-
-  const toggleFilter = (
+  const toggleFilterDirect = (
     key: "type" | "cat" | "zone" | "tags",
     value: string,
   ) => {
-    setDraftFilters((prev) => {
+    setFilters((prev) => {
+      let next: typeof prev;
       if (key === "cat" && value === "전체") {
-        return { ...prev, [key]: prev[key].includes("전체") ? [] : ["전체"] };
-      }
-      if (key === "cat" && value !== "전체") {
+        next = { ...prev, [key]: ["전체"] };
+      } else if (key === "cat" && value !== "전체") {
         const newCat = prev[key].includes(value)
           ? prev[key].filter((v) => v !== value)
           : [...prev[key].filter((v) => v !== "전체"), value];
-        return { ...prev, [key]: newCat };
+        next = { ...prev, [key]: newCat.length === 0 ? ["전체"] : newCat };
+      } else {
+        next = {
+          ...prev,
+          [key]: prev[key].includes(value)
+            ? prev[key].filter((v) => v !== value)
+            : [...prev[key], value],
+        };
       }
-      return {
-        ...prev,
-        [key]: prev[key].includes(value)
-          ? prev[key].filter((v) => v !== value)
-          : [...prev[key], value],
-      };
+      // 즉시 지도 업데이트
+      const newList = restaurants.filter((r) => {
+        const typeOk = next.type.length === 0 || next.type.includes(r.type);
+        const catOk =
+          next.cat.includes("전체") || next.cat.includes(r.category);
+        const zoneOk = next.zone.length === 0 || next.zone.includes(r.zone);
+        const tagsOk = applyTagFilter(r, next.tags);
+        return typeOk && catOk && zoneOk && tagsOk;
+      });
+      setMapDisplayList(newList);
+      return next;
     });
-  };
-
-  const resetFilters = () => {
-    setDraftFilters({ type: [], cat: ["전체"], zone: [], tags: [] });
   };
 
   const handleRoll = () => {
@@ -160,11 +138,6 @@ export default function MapSelector() {
     setFocusTarget(result[0] ?? null);
   };
 
-  const activeFilterCount =
-    (filters.cat.includes("전체") || filters.cat.length === 0
-      ? 0
-      : filters.cat.length) + filters.tags.length;
-
   // Translate a label (Korean category/tag key) to current language
   const translateLabel = (label: string): string => {
     const catKey = CAT_KEY_MAP[label];
@@ -173,8 +146,6 @@ export default function MapSelector() {
     if (tagKey) return T[tagKey] ?? label;
     return label;
   };
-
-  const tagSet = new Set(["👤 혼밥", "💸 저렴이", "💪 고단백", "🥗 건강식"]);
 
   // Menu name display by lang
   const menuName = (name: {
@@ -422,179 +393,41 @@ export default function MapSelector() {
         )}
       </div>
 
-      {/* 우상단 필터 아이콘 + 적용된 필터 */}
+      {/* 하단 랜덤 버튼 + 칩 필터 바 */}
       <div
         style={{
           position: "absolute",
-          top: "1rem",
-          right: "1rem",
+          bottom: 0,
+          left: 0,
+          right: 0,
           zIndex: 100,
           display: "flex",
           flexDirection: "column",
-          alignItems: "flex-end",
-          gap: "6px",
+          alignItems: "center",
+          gap: "10px",
+          pointerEvents: "none",
+          paddingBottom: "0",
         }}
       >
-        <button
-          onClick={openFilter}
-          style={{
-            position: "relative",
-            width: "56px",
-            borderRadius: "16px",
-            background: "rgba(255,255,255,0.85)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.6)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-            cursor: "pointer",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "4px",
-            padding: "10px 0",
-          }}
-        >
-          <img src={filterIcon} style={{ width: "22px", height: "22px" }} />
-          <span style={{ fontSize: "11px", fontWeight: 600, color: "#333" }}>
-            {T.filter}
-          </span>
-          {activeFilterCount > 0 && (
-            <span
-              style={{
-                position: "absolute",
-                top: "4px",
-                right: "4px",
-                width: "16px",
-                height: "16px",
-                borderRadius: "50%",
-                background: "#0066ff",
-                color: "white",
-                fontSize: "10px",
-                fontWeight: 700,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
-
-        {/* 적용된 필터 */}
-        <div
-          style={{
-            background: "rgba(255,255,255,0.85)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-            borderRadius: "14px",
-            padding: "8px 12px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            gap: "6px",
-          }}
-        >
-          <span style={{ fontSize: "11px", fontWeight: 600, color: "#888" }}>
-            {T.appliedFilter}
-          </span>
-          {(() => {
-            const catLabels = appliedLabels.filter((l) => !tagSet.has(l));
-            const tagLabels = appliedLabels.filter((l) => tagSet.has(l));
-            return (
-              <>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "4px",
-                    alignItems: "flex-end",
-                  }}
-                >
-                  {catLabels.map((label) => (
-                    <span
-                      key={label}
-                      style={{
-                        background: "#0066ff",
-                        color: "white",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        borderRadius: "20px",
-                        padding: "4px 10px",
-                      }}
-                    >
-                      {translateLabel(label)}
-                    </span>
-                  ))}
-                </div>
-                {catLabels.length > 0 && tagLabels.length > 0 && (
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "1px",
-                      background: "rgba(0,0,0,0.1)",
-                    }}
-                  />
-                )}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "4px",
-                    alignItems: "flex-end",
-                  }}
-                >
-                  {tagLabels.map((label) => (
-                    <span
-                      key={label}
-                      style={{
-                        background: "#0066ff",
-                        color: "white",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        borderRadius: "20px",
-                        padding: "4px 10px",
-                      }}
-                    >
-                      {translateLabel(label)}
-                    </span>
-                  ))}
-                </div>
-              </>
-            );
-          })()}
-        </div>
-      </div>
-
-      {/* 하단 랜덤 버튼 */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: "2rem",
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 100,
-        }}
-      >
+        {/* 랜덤 버튼 */}
         <button
           onClick={handleRoll}
           disabled={filteredList.length === 0}
           style={{
-            padding: "14px 28px",
+            padding: "10px 22px",
             background:
               filteredList.length === 0 ? "rgba(200,200,200,0.6)" : "#0066ff",
             color: filteredList.length === 0 ? "#aaa" : "white",
             border: "none",
             borderRadius: "12px",
-            fontSize: "15px",
+            fontSize: "13px",
             fontWeight: 600,
             cursor: filteredList.length === 0 ? "not-allowed" : "pointer",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             gap: "3px",
+            pointerEvents: "auto",
           }}
         >
           <span>{T.roll}</span>
@@ -602,126 +435,130 @@ export default function MapSelector() {
             {T.filterApplied}
           </span>
         </button>
-      </div>
 
-      {/* 필터 모달 */}
-      {filterOpen && (
-        <>
+        {/* 필터 칩 영역 — 흰색 배경 + 상단 그라데이션 */}
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            paddingTop: "3rem",
+            paddingBottom: "2rem",
+            background:
+              "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 3rem)",
+            pointerEvents: "none",
+          }}
+        >
+          {/* 카테고리 칩 행 */}
           <div
-            onClick={() => setFilterOpen(false)}
             style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 200,
-              background: "rgba(0,0,0,0.35)",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              zIndex: 201,
-              width: "calc(100% - 2rem)",
-              maxWidth: "420px",
-              background: "rgba(255,255,255,0.92)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              borderRadius: "24px",
-              border: "1px solid rgba(255,255,255,0.7)",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.2)",
-              padding: "24px",
+              width: "100%",
+              overflowX: "auto",
+              scrollbarWidth: "none",
+              pointerEvents: "auto",
             }}
           >
             <div
               style={{
                 display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "20px",
+                flexDirection: "row",
+                gap: "8px",
+                padding: "0 16px",
+                width: "max-content",
               }}
             >
-              <span
-                style={{ fontSize: "17px", fontWeight: 700, color: "#111" }}
-              >
-                {T.filterTitle}
-              </span>
-              <button
-                onClick={() => setFilterOpen(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "20px",
-                  cursor: "pointer",
-                  color: "#555",
-                  lineHeight: 1,
-                  padding: "2px 6px",
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <FilterPanel
-              filters={draftFilters}
-              onToggleFilter={toggleFilter}
-              onReset={resetFilters}
-            />
-
-            {/* 초기화 + 적용 */}
-            <div style={{ display: "flex", gap: "10px", marginTop: "24px" }}>
-              <button
-                onClick={resetFilters}
-                style={{
-                  flex: 1,
-                  padding: "13px 0",
-                  background: "rgba(240,240,240,0.8)",
-                  color: "#555",
-                  border: "none",
-                  borderRadius: "12px",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                {T.reset}
-              </button>
-              <button
-                onClick={() => {
-                  setFilters(draftFilters);
-                  const labels =
-                    draftFilters.cat.includes("전체") ||
-                    draftFilters.cat.length === 0
-                      ? ["전체", ...draftFilters.tags]
-                      : [...draftFilters.cat, ...draftFilters.tags];
-                  setAppliedLabels(labels);
-                  setMapDisplayList(draftFilteredList);
-                  setFilterOpen(false);
-                }}
-                disabled={draftFilteredList.length === 0}
-                style={{
-                  flex: 2,
-                  padding: "13px 0",
-                  background:
-                    draftFilteredList.length === 0
-                      ? "rgba(200,200,200,0.6)"
-                      : "#0066ff",
-                  color: draftFilteredList.length === 0 ? "#aaa" : "white",
-                  border: "none",
-                  borderRadius: "12px",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  cursor:
-                    draftFilteredList.length === 0 ? "not-allowed" : "pointer",
-                }}
-              >
-                {T.apply} ({draftFilteredList.length})
-              </button>
+              {[
+                { key: "전체", label: T.catAll },
+                { key: "한식", label: T.catKorean },
+                { key: "일식", label: T.catJapanese },
+                { key: "중식", label: T.catChinese },
+                { key: "간편식·분식", label: T.catSnack },
+                { key: "양식·아시안", label: T.catWestern },
+              ].map((item) => {
+                const isActive =
+                  item.key === "전체"
+                    ? filters.cat.includes("전체")
+                    : filters.cat.includes(item.key);
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => toggleFilterDirect("cat", item.key)}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: "999px",
+                      border: isActive
+                        ? "1px solid rgba(0,102,255,0.2)"
+                        : "1.5px solid #d1d5db",
+                      background: isActive ? "rgba(0,102,255,0.08)" : "white",
+                      color: isActive ? "#0066ff" : "#333",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
-        </>
-      )}
+
+          {/* 태그 칩 행 */}
+          <div
+            style={{
+              width: "100%",
+              overflowX: "auto",
+              scrollbarWidth: "none",
+              pointerEvents: "auto",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                gap: "8px",
+                padding: "0 16px",
+                width: "max-content",
+              }}
+            >
+              {[
+                { key: "👤 혼밥", label: T.tagSolo },
+                { key: "💸 저렴이", label: T.tagCheap },
+                { key: "💪 고단백", label: T.tagProtein },
+                { key: "🥗 건강식", label: T.tagHealthy },
+              ].map((item) => {
+                const isActive = filters.tags.includes(item.key);
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => toggleFilterDirect("tags", item.key)}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: "999px",
+                      border: isActive
+                        ? "1px solid rgba(0,102,255,0.2)"
+                        : "1.5px solid #d1d5db",
+                      background: isActive ? "rgba(0,102,255,0.08)" : "white",
+                      color: isActive ? "#0066ff" : "#333",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        {/* 필터 칩 영역 래퍼 끝 */}
+      </div>
 
       {/* 복사 스낵바 */}
       <style>{`

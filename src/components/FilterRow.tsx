@@ -22,19 +22,31 @@ export function FilterRow({
         {label}
       </span>
       <div className="flex flex-wrap gap-2">
-        {items.map((item) => (
-          <button
-            key={item.key}
-            onClick={() => onToggle(item.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
-              activeItems.includes(item.key)
-                ? "bg-[#0066ff] border-[#0066ff] text-white shadow-sm"
-                : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+        {items.map((item) => {
+          const isActive = activeItems.includes(item.key);
+          return (
+            <button
+              key={item.key}
+              onClick={() => onToggle(item.key)}
+              className="px-4 py-2 rounded-lg text-sm font-medium border transition-all"
+              style={
+                isActive
+                  ? {
+                      color: "#0066ff",
+                      background: "rgba(0,102,255,0.08)",
+                      border: "1px solid rgba(0,102,255,0.2)",
+                    }
+                  : {
+                      color: "#374151",
+                      background: "#ffffff",
+                      border: "1px solid #d1d5db",
+                    }
+              }
+            >
+              {item.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
