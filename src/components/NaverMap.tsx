@@ -1,60 +1,23 @@
 import React, { useEffect, useRef } from "react";
 
 import type { Restaurant } from "../data2";
-
 import { restaurants } from "../data2";
-
 import { useLang } from "../LangContext";
+import {
+  computeClusters,
+  buildClusterContent,
+  buildSingleMarkerContent,
+  type MarkerModes,
+} from "./clusterMarkers";
 
-import { t } from "../i18n";
-
-import type { Lang } from "../i18n";
-
-export type MarkerModeKey = "price" | "menu" | "name";
-export type MarkerModes = Set<MarkerModeKey>;
+export type { MarkerModeKey, MarkerModes } from "./clusterMarkers";
 
 interface NaverMapProps {
   displayList?: Restaurant[];
   focusTarget?: Restaurant | null;
   onMarkerClick?: (restaurant: Restaurant) => void;
   markerModes?: MarkerModes;
-}
-
-function buildMarkerContent(
-  shop: Restaurant,
-  lang: Lang,
-  modes: MarkerModes,
-): string {
-  const T = t[lang];
-  const lines: string[] = [];
-
-  if (modes.has("price")) {
-    const priceText =
-      shop.minPrice != null
-        ? `<span style="color:#0066ff;">${shop.minPrice.toLocaleString()}${T.priceUnit}</span>`
-        : `<span style="color:#aaa;">${T.noPrice}</span>`;
-    lines.push(priceText);
-  }
-  if (modes.has("name")) {
-    lines.push(
-      `<span style="font-size:12px;font-weight:500;color:#111;letter-spacing:-0.3px;">${shop.name}</span>`,
-    );
-  }
-  if (modes.has("menu")) {
-    const menuText = shop.menus
-      .filter((m) => m.isPrimary)
-      .map((m) => m.name[lang] || m.name.ko)
-      .join(", ");
-    if (menuText)
-      lines.push(
-        `<span style="font-size:10px;font-weight:500;color:#666;font-style:italic;">${menuText}</span>`,
-      );
-  }
-
-  const inner = lines
-    .map((l) => `<div style="line-height:1.4;">${l}</div>`)
-    .join("");
-  return `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;"><div style="background:white;padding:4px 8px;border-radius:10px;border:1.5px solid #0066ff;font-size:11px;font-weight:700;color:#333;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.15);line-height:1.5;">${inner}</div></div>`;
+  filteredMenuIds?: Set<string> | null;
 }
 
 const DEFAULT_MODES: MarkerModes = new Set(["price"]);
@@ -64,53 +27,43 @@ const NaverMap: React.FC<NaverMapProps> = ({
   focusTarget,
   onMarkerClick,
   markerModes = DEFAULT_MODES,
+  filteredMenuIds,
 }) => {
   const { lang } = useLang();
-  const markerModesRef = useRef<MarkerModes>(markerModes);
-  const mapElement = useRef<HTMLDivElement | null>(null);
 
+  const mapElement = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<naver.maps.Map | null>(null);
 
-  const markerMapRef = useRef<Map<string, naver.maps.Marker>>(new Map());
+  // 현재 표시 중인 마커들 (클러스터 + 단일 모두)
+  const activeMarkersRef = useRef<naver.maps.Marker[]>([]);
 
+  // 최신 값을 ref로 유지 (클로저 stale 방지)
   const displayListRef = useRef<Restaurant[] | undefined>(displayList);
+  const markerModesRef = useRef<MarkerModes>(markerModes);
+  const filteredMenuIdsRef = useRef<Set<string> | null | undefined>(filteredMenuIds);
+  const langRef = useRef(lang);
 
-  // displayList 변경 시 마커 show/hide
-  useEffect(() => {
-    displayListRef.current = displayList;
+  displayListRef.current = displayList;
+  markerModesRef.current = markerModes;
+  filteredMenuIdsRef.current = filteredMenuIds;
+  langRef.current = lang;
 
-    if (markerMapRef.current.size === 0) return; // 마커 아직 없으면 스킵
-
-    const visibleSet = new Set((displayList ?? restaurants).map((r) => r.id));
-
-    markerMapRef.current.forEach((marker, id) => {
-      marker.setMap(visibleSet.has(id) ? mapRef.current : null);
-    });
-  }, [displayList]);
+  /** 기존 마커를 모두 제거하고 새로 그린다 */
+  const redrawMarkers = useRef<(() => void) | null>(null);
 
   // focusTarget 변경 시 해당 위치로 이동
   useEffect(() => {
     if (!focusTarget || !mapRef.current) return;
     if (!focusTarget.lat || !focusTarget.lng) return;
-
     mapRef.current.panTo(
       new window.naver.maps.LatLng(focusTarget.lat, focusTarget.lng),
     );
   }, [focusTarget]);
 
-  // lang 또는 markerModes 변경 시 마커 아이콘 텍스트 업데이트
+  // displayList / markerModes / filteredMenuIds / lang 변경 시 마커 재렌더
   useEffect(() => {
-    markerModesRef.current = markerModes;
-    if (markerMapRef.current.size === 0) return;
-    restaurants.forEach((shop) => {
-      const marker = markerMapRef.current.get(shop.id);
-      if (!marker) return;
-      marker.setIcon({
-        content: buildMarkerContent(shop, lang, markerModes),
-        anchor: new window.naver.maps.Point(12, 12),
-      });
-    });
-  }, [lang, markerModes]);
+    redrawMarkers.current?.();
+  }, [displayList, markerModes, filteredMenuIds, lang]);
 
   // 지도 + 마커 초기화 (최초 1회)
   useEffect(() => {
@@ -118,19 +71,12 @@ const NaverMap: React.FC<NaverMapProps> = ({
 
     const map = new window.naver.maps.Map(mapElement.current, {
       center: new window.naver.maps.LatLng(37.5792, 126.9239),
-
       zoom: 17,
-
       minZoom: 15,
-
       maxZoom: 21,
-
       scrollWheel: true,
-
       zoomControl: false,
-
       mapTypeControl: false,
-
       logoControlOptions: {
         position: window.naver.maps.Position.BOTTOM_LEFT,
       },
@@ -138,33 +84,72 @@ const NaverMap: React.FC<NaverMapProps> = ({
 
     mapRef.current = map;
 
-    // 마커 생성 후 초기 displayList 상태 적용
-    const initialVisible = new Set(
-      (displayListRef.current ?? restaurants).map((r) => r.id),
-    );
+    /** 마커 전체 다시 그리기 */
+    function redraw() {
+      // 기존 마커 제거
+      activeMarkersRef.current.forEach((m) => m.setMap(null));
+      activeMarkersRef.current = [];
 
-    restaurants.forEach((shop) => {
-      if (!shop.lat || !shop.lng) return;
+      const visible = displayListRef.current ?? restaurants;
+      const { clusters, singles } = computeClusters(visible, map);
 
-      const marker = new window.naver.maps.Marker({
-        position: new window.naver.maps.LatLng(shop.lat, shop.lng),
+      // 클러스터 마커
+      clusters.forEach((cluster) => {
+        const marker = new window.naver.maps.Marker({
+          position: new window.naver.maps.LatLng(cluster.lat, cluster.lng),
+          map,
+          icon: {
+            content: buildClusterContent(cluster.restaurants.length),
+            anchor: new window.naver.maps.Point(22, 22),
+          },
+          zIndex: 100,
+        });
 
-        map: initialVisible.has(shop.id) ? map : null,
+        window.naver.maps.Event.addListener(marker, "click", () => {
+          const currentZoom = map.getZoom();
+          map.setZoom(currentZoom + 2, true);
+          map.panTo(new window.naver.maps.LatLng(cluster.lat, cluster.lng));
+        });
 
-        icon: {
-          content: buildMarkerContent(shop, lang, markerModesRef.current),
-          anchor: new window.naver.maps.Point(12, 12),
-        },
+        activeMarkersRef.current.push(marker);
       });
 
-      window.naver.maps.Event.addListener(marker, "click", () => {
-        map.panTo(marker.getPosition());
-        onMarkerClick?.(shop);
-      });
+      // 단일 마커
+      singles.forEach((shop) => {
+        if (!shop.lat || !shop.lng) return;
+        const marker = new window.naver.maps.Marker({
+          position: new window.naver.maps.LatLng(shop.lat, shop.lng),
+          map,
+          icon: {
+            content: buildSingleMarkerContent(
+              shop,
+              langRef.current,
+              markerModesRef.current,
+              filteredMenuIdsRef.current,
+            ),
+            anchor: new window.naver.maps.Point(12, 12),
+          },
+          zIndex: 10,
+        });
 
-      markerMapRef.current.set(shop.id, marker);
-    });
-  }, []);
+        window.naver.maps.Event.addListener(marker, "click", () => {
+          map.panTo(marker.getPosition());
+          onMarkerClick?.(shop);
+        });
+
+        activeMarkersRef.current.push(marker);
+      });
+    }
+
+    redrawMarkers.current = redraw;
+
+    // 초기 렌더
+    redraw();
+
+    // 줌/이동 끝날 때마다 재클러스터링
+    window.naver.maps.Event.addListener(map, "zoom_changed", redraw);
+    window.naver.maps.Event.addListener(map, "dragend", redraw);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div
