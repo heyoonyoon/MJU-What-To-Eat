@@ -224,8 +224,12 @@ export default function MapSelector() {
   const handleApplySearch = useCallback(
     (input: string, target: "name" | "menu") => {
       const count = applySearch(input, target, setMarkerModes, setFocusTarget);
-      if (count > 0) closeSearchModal();
-      else showToast("검색 결과가 없습니다");
+      if (count > 0) {
+        closeSearchModal();
+        setMarkerIslandOpen(false);
+      } else {
+        showToast("검색 결과가 없습니다");
+      }
     },
     [applySearch, closeSearchModal, showToast],
   );
@@ -277,6 +281,14 @@ export default function MapSelector() {
           from { opacity: 1; }
           to   { opacity: 0; }
         }
+        @keyframes rollBtnPress {
+          0%   { background: rgba(0,0,0,0.03); color: #333; border-color: #d1d5db; }
+          15%  { background: #0066ff; color: white; border-color: #0066ff; }
+          100% { background: rgba(0,0,0,0.03); color: #333; border-color: #d1d5db; }
+        }
+        .roll-btn-pressing {
+          animation: rollBtnPress 0.5s cubic-bezier(0.4,0,0.2,1) forwards;
+        }
       `}</style>
 
       {/* 지도 */}
@@ -318,7 +330,6 @@ export default function MapSelector() {
       {/* 헤더 */}
       <HeaderSection
         searchQuery={searchQuery}
-        appliedTarget={appliedTarget}
         showHint1={showHint1}
         langMenuOpen={langMenuOpen}
         langMenuVisible={langMenuVisible}
@@ -480,20 +491,22 @@ export default function MapSelector() {
       <div
         style={{
           position: "absolute",
-          bottom: "56px",
-          left: 0,
-          right: 0,
+          bottom: "64px",
+          left: "12px",
+          right: "12px",
           zIndex: 110,
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
-          gap: "8px",
-          padding: "8px 16px",
-          background: "rgba(255,255,255,0.97)",
+          gap: "6px",
+          padding: "6px 8px",
+          background: "rgba(255,255,255,0.95)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
-          borderTop: "1px solid rgba(0,0,0,0.08)",
+          borderRadius: "14px",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
+          border: "1px solid rgba(0,0,0,0.06)",
         }}
       >
         {/* 되돌리기 버튼: 항상 표시, 비활성 시 disabled 스타일 */}
@@ -504,18 +517,17 @@ export default function MapSelector() {
               onClick={isUnrollable ? handleUnroll : undefined}
               disabled={!isUnrollable}
               style={{
-                padding: "10px 14px",
-                background: isUnrollable ? "white" : "rgba(0,0,0,0.03)",
+                padding: "8px 12px",
+                background: "rgba(0,0,0,0.03)",
                 color: isUnrollable ? "#444" : "#c4c4c4",
                 border: isUnrollable
                   ? "1.5px solid #d1d5db"
                   : "1.5px solid #e9e9e9",
-                borderRadius: "12px",
-                fontSize: "13px",
+                borderRadius: "10px",
+                fontSize: "12px",
                 fontWeight: 600,
                 cursor: isUnrollable ? "pointer" : "default",
                 whiteSpace: "nowrap",
-                boxShadow: isUnrollable ? "0 2px 8px rgba(0,0,0,0.10)" : "none",
                 transition: "all 0.18s ease",
                 flexShrink: 0,
               }}
@@ -527,20 +539,25 @@ export default function MapSelector() {
         <button
           onClick={handleRoll}
           disabled={filteredList.length === 0}
+          onPointerDown={(e) => {
+            if (filteredList.length === 0) return;
+            const el = e.currentTarget;
+            el.classList.remove("roll-btn-pressing");
+            void el.offsetWidth;
+            el.classList.add("roll-btn-pressing");
+            el.addEventListener("animationend", () => el.classList.remove("roll-btn-pressing"), { once: true });
+          }}
           style={{
             flex: 1,
-            padding: "10px 0",
-            background:
-              filteredList.length === 0 ? "rgba(0,0,0,0.04)" : "#3b82f6",
-            color: filteredList.length === 0 ? "#c4c4c4" : "white",
-            border: filteredList.length === 0 ? "1.5px solid #e9e9e9" : "none",
-            borderRadius: "12px",
-            fontSize: "13px",
+            padding: "8px 0",
+            background: "rgba(0,0,0,0.03)",
+            color: filteredList.length === 0 ? "#c4c4c4" : "#333",
+            border: `1.5px solid ${filteredList.length === 0 ? "#e9e9e9" : "#d1d5db"}`,
+            borderRadius: "10px",
+            fontSize: "12px",
             fontWeight: 700,
             cursor: filteredList.length === 0 ? "not-allowed" : "pointer",
             whiteSpace: "nowrap",
-            boxShadow: "none",
-            transition: "all 0.18s ease",
           }}
         >
           {t[lang].rollRestaurant}
@@ -548,22 +565,25 @@ export default function MapSelector() {
         <button
           onClick={handleRollMenu}
           disabled={filteredList.length === 0}
+          onPointerDown={(e) => {
+            if (filteredList.length === 0) return;
+            const el = e.currentTarget;
+            el.classList.remove("roll-btn-pressing");
+            void el.offsetWidth;
+            el.classList.add("roll-btn-pressing");
+            el.addEventListener("animationend", () => el.classList.remove("roll-btn-pressing"), { once: true });
+          }}
           style={{
             flex: 1,
-            padding: "10px 0",
-            background:
-              filteredList.length === 0
-                ? "rgba(0,0,0,0.04)"
-                : "#10b981",
-            color: filteredList.length === 0 ? "#c4c4c4" : "white",
-            border: filteredList.length === 0 ? "1.5px solid #e9e9e9" : "none",
-            borderRadius: "12px",
-            fontSize: "13px",
+            padding: "8px 0",
+            background: "rgba(0,0,0,0.03)",
+            color: filteredList.length === 0 ? "#c4c4c4" : "#333",
+            border: `1.5px solid ${filteredList.length === 0 ? "#e9e9e9" : "#d1d5db"}`,
+            borderRadius: "10px",
+            fontSize: "12px",
             fontWeight: 700,
             cursor: filteredList.length === 0 ? "not-allowed" : "pointer",
             whiteSpace: "nowrap",
-            boxShadow: "none",
-            transition: "all 0.18s ease",
           }}
         >
           {t[lang].rollMenu}
@@ -582,7 +602,8 @@ export default function MapSelector() {
           background: "rgba(255,255,255,0.97)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
-          borderTop: "1px solid rgba(0,0,0,0.08)",
+          borderTop: "1px solid rgba(0,0,0,0.06)",
+          borderRadius: "20px 20px 0 0",
           display: "flex",
           flexDirection: "row",
           alignItems: "stretch",
@@ -592,7 +613,7 @@ export default function MapSelector() {
           const isActive = activeTab === tab;
           const T = t[lang];
           const label = tab === "map" ? T.tabMap : T.tabMenu;
-          const mapColor = isActive ? "#0066ff" : "#aab4be";
+          const mapColor = isActive ? "#111111" : "#aab4be";
           const icon =
             tab === "map" ? (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -626,11 +647,8 @@ export default function MapSelector() {
                 background: "none",
                 border: "none",
                 cursor: "pointer",
-                color: isActive ? "#0066ff" : "#aab4be",
-                borderTop: isActive
-                  ? "2px solid #0066ff"
-                  : "2px solid transparent",
-                transition: "color 0.15s ease, border-color 0.15s ease",
+                color: isActive ? "#111111" : "#aab4be",
+                transition: "color 0.15s ease",
               }}
             >
               <span style={{ lineHeight: 1 }}>{icon}</span>
@@ -666,6 +684,7 @@ export default function MapSelector() {
           menuContainerWidth={menuContainerWidth}
           menuFilterBarHeight={menuFilterBarHeight}
           scrollPaddingTop={menuFilterBarHeight}
+          scrollPaddingBottom={124}
           onScrollRefReady={(node) => {
             menuScrollRef.current = node;
             if (node && savedMenuScrollTop.current > 0) {
@@ -686,11 +705,56 @@ export default function MapSelector() {
         />
       )}
 
+      {/* 검색어 스낵바 — 필터 영역 아래 */}
+      {searchQuery && (
+        <div
+          style={{
+            position: "absolute",
+            top: menuFilterBarHeight + 8,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 150,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+            background: "rgba(0,0,0,0.45)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            borderRadius: "12px",
+            padding: "10px 16px",
+            color: "white",
+            whiteSpace: "nowrap",
+            pointerEvents: "auto",
+          }}
+        >
+          <span style={{ fontSize: "13px", fontWeight: 400, color: "white" }}>
+            🔍 {appliedTarget === "menu" ? t[lang].searchByMenu : t[lang].searchByName}:{" "}
+            <strong>"{searchQuery}"</strong>
+          </span>
+          <button
+            onClick={handleClearSearch}
+            style={{
+              background: "none",
+              border: "none",
+              color: "rgba(255,255,255,0.7)",
+              fontSize: "16px",
+              cursor: "pointer",
+              lineHeight: 1,
+              padding: "0",
+              flexShrink: 0,
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* 토스트 */}
       <div
         style={{
           position: "absolute",
-          top: "2.5rem",
+          top: menuFilterBarHeight + (searchQuery ? 58 : 8),
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 202,

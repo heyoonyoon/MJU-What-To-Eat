@@ -10,6 +10,7 @@ type Props = {
   menuContainerWidth: number;
   menuFilterBarHeight: number;
   scrollPaddingTop: number;
+  scrollPaddingBottom: number;
   onScrollRefReady: (node: HTMLDivElement | null) => void;
   onScrollTopChange: (top: number) => void;
   onContainerResize: (height: number, width: number) => void;
@@ -24,6 +25,7 @@ export default function MenuView({
   menuContainerWidth,
   menuFilterBarHeight,
   scrollPaddingTop,
+  scrollPaddingBottom,
   onScrollRefReady,
   onScrollTopChange,
   onContainerResize,
@@ -47,7 +49,7 @@ export default function MenuView({
         top: 0,
         left: 0,
         right: 0,
-        bottom: "112px",
+        bottom: 0,
         zIndex: 99,
         background: "#f2f2f7",
         display: "flex",
@@ -71,7 +73,12 @@ export default function MenuView({
         onScroll={(e) =>
           onScrollTopChange((e.target as HTMLDivElement).scrollTop)
         }
-        style={{ flex: 1, overflowY: "auto", paddingTop: scrollPaddingTop }}
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          paddingTop: scrollPaddingTop,
+          paddingBottom: scrollPaddingBottom,
+        }}
       >
         {isRestaurantMode ? (
           <ShopCardList

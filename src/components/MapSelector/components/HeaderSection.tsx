@@ -3,7 +3,6 @@ import { t, LANG_LABELS, LANGS } from "../../../i18n";
 import type { Lang } from "../../../i18n";
 type Props = {
   searchQuery: string;
-  appliedTarget: "name" | "menu";
   showHint1: boolean;
   langMenuOpen: boolean;
   langMenuVisible: boolean;
@@ -19,7 +18,6 @@ type Props = {
 
 export default function HeaderSection({
   searchQuery,
-  appliedTarget,
   showHint1,
   langMenuOpen,
   langMenuVisible,
@@ -217,46 +215,6 @@ export default function HeaderSection({
         </div>
       </div>
 
-      {/* 검색어 위젯 */}
-      {searchQuery && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "12px",
-            background: "rgba(0,0,0,0.45)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-            borderRadius: "12px",
-            padding: "10px 16px",
-            color: "white",
-            alignSelf: "center",
-            marginTop: "6px",
-            boxSizing: "border-box",
-          }}
-        >
-          <span style={{ fontSize: "13px", fontWeight: 400, color: "white" }}>
-            🔍 {appliedTarget === "menu" ? T.searchByMenu : T.searchByName}:{" "}
-            <strong>"{searchQuery}"</strong>
-          </span>
-          <button
-            onClick={onClearSearch}
-            style={{
-              background: "none",
-              border: "none",
-              color: "rgba(255,255,255,0.7)",
-              fontSize: "16px",
-              cursor: "pointer",
-              lineHeight: 1,
-              padding: "0",
-              flexShrink: 0,
-            }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* 힌트 스낵바 */}
       {showHint1 && (
