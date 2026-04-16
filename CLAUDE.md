@@ -4,8 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Mandatory Rules
 
-- **Always commit after completing a task.** Every time you finish a piece of work, create a git commit before moving on.
-- **Keep files under 200 lines.** If a file exceeds 200 lines, split it — extract hooks into `hooks/`, sub-components into `components/`, and pure utilities into a separate file.
+- **Keep files under 200 lines.** If a file exceeds 500 lines, split it — extract hooks into `hooks/`, sub-components into `components/`, and pure utilities into a separate file.
 - **Separate resources by folder and keep units minimal.** Components go in `components/`, hooks go in `hooks/`. Each file should do one thing. Never co-locate a hook and a component in the same file.
 
 ## Commands
@@ -40,18 +39,18 @@ This is a single-page React + TypeScript app (Vite) — a restaurant finder for 
 
 The main feature module. `index.tsx` is the orchestration layer (~350 lines); everything else is split by concern:
 
-| Path | Responsibility |
-|------|----------------|
-| `hooks/useFilterState.ts` | Filter state + `filteredList` (useMemo), search query, price cap, `applySearch`, `toggleFilter` |
-| `hooks/useShopModal.ts` | Selected restaurant state, open/close animations, drag-to-dismiss gesture |
-| `hooks/useSearchModal.ts` | Search modal open/close, drag-to-dismiss gesture, input state |
-| `hooks/useToast.ts` | Toast queue with auto-fade |
-| `components/HeaderSection.tsx` | Search bar trigger, language picker, title island, marker mode toggles, hint snackbar |
-| `components/FilterBar.tsx` | Random roll button, category chips, tag chips, price slider popup |
-| `components/MenuView.tsx` | Virtualised menu list/grid (manual virtual scroll via `menuScrollTop`) |
-| `components/SearchModal.tsx` | Full-screen search UI with drag dismiss |
-| `components/ShopDetailModal.tsx` | Restaurant detail sheet with drag dismiss |
-| `utils.ts` | Pure helpers: `resistY`, `resistX` (drag resistance curves), `applyTagFilter`, `applyPriceFilter` |
+| Path                             | Responsibility                                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `hooks/useFilterState.ts`        | Filter state + `filteredList` (useMemo), search query, price cap, `applySearch`, `toggleFilter`   |
+| `hooks/useShopModal.ts`          | Selected restaurant state, open/close animations, drag-to-dismiss gesture                         |
+| `hooks/useSearchModal.ts`        | Search modal open/close, drag-to-dismiss gesture, input state                                     |
+| `hooks/useToast.ts`              | Toast queue with auto-fade                                                                        |
+| `components/HeaderSection.tsx`   | Search bar trigger, language picker, title island, marker mode toggles, hint snackbar             |
+| `components/FilterBar.tsx`       | Random roll button, category chips, tag chips, price slider popup                                 |
+| `components/MenuView.tsx`        | Virtualised menu list/grid (manual virtual scroll via `menuScrollTop`)                            |
+| `components/SearchModal.tsx`     | Full-screen search UI with drag dismiss                                                           |
+| `components/ShopDetailModal.tsx` | Restaurant detail sheet with drag dismiss                                                         |
+| `utils.ts`                       | Pure helpers: `resistY`, `resistX` (drag resistance curves), `applyTagFilter`, `applyPriceFilter` |
 
 ### NaverMap (`src/components/NaverMap.tsx`)
 
