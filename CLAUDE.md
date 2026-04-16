@@ -6,6 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Keep files under 200 lines.** If a file exceeds 500 lines, split it — extract hooks into `hooks/`, sub-components into `components/`, and pure utilities into a separate file.
 - **Separate resources by folder and keep units minimal.** Components go in `components/`, hooks go in `hooks/`. Each file should do one thing. Never co-locate a hook and a component in the same file.
+- **Ref를 prop으로 내리지 마라.** ESLint(`react-hooks/immutability`)는 prop 이름을 추적하여 `.current` 쓰기를 차단한다. 자식이 DOM 노드를 부모 ref에 연결해야 한다면, ref 객체 대신 `onXxxReady: (node: T | null) => void` 콜백을 prop으로 내리고, 부모가 콜백 안에서 `ref.current = node`를 처리한다.
+- **모든 UI 텍스트는 반드시 다국어 지원해야 한다.** 새로운 텍스트를 컴포넌트에 추가할 때 하드코딩하지 말고, `src/i18n.ts`의 `t` 객체에 `ko | en | zh | ja | vi` 5개 언어 모두 키를 추가한 뒤 `t[lang].keyName` 형태로 참조하라.
+- **Never call `setState` directly inside a `useEffect` body.** This causes cascading renders. If state B must reset when state A changes, derive B from A instead: store a minimal key (e.g. an id) in state, then compute the full value with `useMemo` or inline during render. `useEffect` is for syncing with *external* systems (DOM, timers, APIs), not for resetting other React state.
 
 ## Commands
 

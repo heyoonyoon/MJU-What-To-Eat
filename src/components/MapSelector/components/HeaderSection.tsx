@@ -1,45 +1,35 @@
 import { useLang } from "../../../LangContext";
 import { t, LANG_LABELS, LANGS } from "../../../i18n";
 import type { Lang } from "../../../i18n";
-import type { MarkerModeKey, MarkerModes } from "../../NaverMap";
-
 type Props = {
-  activeTab: "map" | "menu";
   searchQuery: string;
   appliedTarget: "name" | "menu";
-  markerModes: MarkerModes;
   showHint1: boolean;
   langMenuOpen: boolean;
   langMenuVisible: boolean;
   headerRowRef: React.RefObject<HTMLDivElement | null>;
-  titleIslandRef: React.RefObject<HTMLDivElement | null>;
   onSearchBarClick: () => void;
   onClearSearch: () => void;
   onDismissHint: () => void;
   onOpenLangMenu: () => void;
   onCloseLangMenu: () => void;
   onSetLang: (l: Lang) => void;
-  onToggleMarkerMode: (mode: MarkerModeKey) => void;
   onHeaderResize: (height: number) => void;
 };
 
 export default function HeaderSection({
-  activeTab,
   searchQuery,
   appliedTarget,
-  markerModes,
   showHint1,
   langMenuOpen,
   langMenuVisible,
   headerRowRef,
-  titleIslandRef,
   onSearchBarClick,
   onClearSearch,
   onDismissHint,
   onOpenLangMenu,
   onCloseLangMenu,
   onSetLang,
-  onToggleMarkerMode,
   onHeaderResize,
 }: Props) {
   const { lang } = useLang();
@@ -226,136 +216,6 @@ export default function HeaderSection({
           )}
         </div>
       </div>
-
-      {/* 두 번째 행: 서비스명 아일랜드 + 마커 표시 모드 토글 (지도 탭에서만) */}
-      {activeTab === "map" && (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "stretch",
-            gap: "8px",
-            width: "100%",
-          }}
-        >
-          <div
-            ref={titleIslandRef}
-            style={{
-              background: "rgba(255,255,255,0.85)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-              border: "1px solid rgba(255,255,255,0.6)",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-              borderRadius: "14px",
-              padding: "3px 10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "8px",
-              flex: 1,
-              minWidth: 0,
-              flexWrap: "wrap",
-            }}
-          >
-            <span
-              style={{
-                fontSize: lang === "ko" ? "15px" : "11px",
-                fontWeight: 800,
-                color: "#111",
-                minWidth: 0,
-              }}
-            >
-              {T.appTitle}
-            </span>
-            <a
-              href="https://www.instagram.com/_yoonyoon_1/"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#0066ff",
-                background: "rgba(0,102,255,0.08)",
-                border: "1px solid rgba(0,102,255,0.2)",
-                borderRadius: "8px",
-                padding: "3px 8px",
-                textDecoration: "none",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {T.contact}
-            </a>
-          </div>
-
-          {/* 마커 표시 모드 토글 */}
-          <div
-            style={{
-              background: "rgba(255,255,255,0.88)",
-              backdropFilter: "blur(14px)",
-              WebkitBackdropFilter: "blur(14px)",
-              borderRadius: "14px",
-              padding: "5px 10px 6px",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
-              border: "1px solid rgba(255,255,255,0.6)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "5px",
-              flexShrink: 0,
-              marginLeft: "auto",
-            }}
-          >
-            <span
-              style={{
-                fontSize: "10px",
-                fontWeight: 700,
-                color: "#aaa",
-                letterSpacing: "0.4px",
-                textTransform: "uppercase",
-                textAlign: "center",
-              }}
-            >
-              {T.markerLabel}
-            </span>
-            <div style={{ display: "flex", flexDirection: "row", gap: "4px" }}>
-              {(["price", "menu", "name"] as MarkerModeKey[]).map((mode) => {
-                const base =
-                  mode === "price"
-                    ? T.markerPrice
-                    : mode === "menu"
-                      ? T.markerMenu
-                      : T.markerName;
-                const suffix = T.markerSuffix ? ` ${T.markerSuffix}` : "";
-                const label = base + suffix;
-                const isActive = markerModes.has(mode);
-                return (
-                  <button
-                    key={mode}
-                    onClick={() => onToggleMarkerMode(mode)}
-                    style={{
-                      padding: "3px 9px",
-                      borderRadius: "8px",
-                      border: isActive
-                        ? "1.5px solid rgba(0,102,255,0.25)"
-                        : "1.5px solid #e5e7eb",
-                      background: isActive
-                        ? "rgba(0,102,255,0.08)"
-                        : "rgba(0,0,0,0.03)",
-                      color: isActive ? "#0066ff" : "#555",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 검색어 위젯 */}
       {searchQuery && (

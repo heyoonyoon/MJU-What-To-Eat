@@ -1,13 +1,10 @@
 import { useLang } from "../../../LangContext";
 import { t } from "../../../i18n";
-import type { Restaurant } from "../../../data2";
 
 const PRICE_MIN = 4000;
 const PRICE_MAX = 18000;
 
 type Props = {
-  activeTab: "map" | "menu";
-  filteredList: Restaurant[];
   filters: {
     type: string[];
     cat: string[];
@@ -18,9 +15,8 @@ type Props = {
   priceSliderOpen: boolean;
   priceSliderVisible: boolean;
   sliderValue: number;
-  pricePopupPos: { bottom: number; left: number };
+  pricePopupPos: { top: number; left: number };
   priceButtonRef: React.RefObject<HTMLButtonElement | null>;
-  onRoll: () => void;
   onToggleFilter: (
     key: "type" | "cat" | "zone" | "tags",
     value: string,
@@ -32,11 +28,10 @@ type Props = {
   onApplyPrice: () => void;
   onClearPrice: () => void;
   onFilterBarResize: (height: number) => void;
+  headerOffset: number;
 };
 
 export default function FilterBar({
-  activeTab,
-  filteredList,
   filters,
   maxPrice,
   priceSliderOpen,
@@ -44,7 +39,6 @@ export default function FilterBar({
   sliderValue,
   pricePopupPos,
   priceButtonRef,
-  onRoll,
   onToggleFilter,
   onClearTagFilters,
   onOpenPriceSlider,
@@ -53,6 +47,7 @@ export default function FilterBar({
   onApplyPrice,
   onClearPrice,
   onFilterBarResize,
+  headerOffset,
 }: Props) {
   const { lang } = useLang();
   const T = t[lang];
@@ -71,7 +66,7 @@ export default function FilterBar({
       }}
       style={{
         position: "absolute",
-        bottom: 0,
+        top: 0,
         left: 0,
         right: 0,
         zIndex: 100,
@@ -90,49 +85,12 @@ export default function FilterBar({
           display: "flex",
           flexDirection: "column",
           gap: "6px",
-          paddingTop: "3rem",
-          paddingBottom:
-            window.innerWidth <= 400 ? "60px" : "calc(2rem + 56px)",
-          background:
-            activeTab === "menu"
-              ? "linear-gradient(to bottom, rgba(242,242,247,0) 0%, rgba(242,242,247,1) 3rem)"
-              : "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 3rem)",
+          paddingTop: `${headerOffset + 8}px`,
+          paddingBottom: "1rem",
+          background: "none",
           pointerEvents: "none",
         }}
       >
-        {/* 랜덤 버튼 */}
-        <button
-          onClick={onRoll}
-          disabled={filteredList.length === 0}
-          style={{
-            position: "absolute",
-            top: "0",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            padding: "8px 18px",
-            background:
-              filteredList.length === 0 ? "rgba(200,200,200,0.6)" : "#0066ff",
-            color: filteredList.length === 0 ? "#aaa" : "white",
-            border: "none",
-            borderRadius: "12px",
-            fontSize: "12px",
-            fontWeight: 600,
-            cursor: filteredList.length === 0 ? "not-allowed" : "pointer",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "3px",
-            pointerEvents: "auto",
-            whiteSpace: "nowrap",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-          }}
-        >
-          <span>{T.roll}</span>
-          <span style={{ fontSize: "12px", fontWeight: 500, opacity: 0.85 }}>
-            {T.filterApplied}
-          </span>
-        </button>
-
         {/* 카테고리 칩 행 */}
         <div
           style={{
@@ -171,10 +129,10 @@ export default function FilterBar({
                     padding: "6px 14px",
                     borderRadius: "999px",
                     border: isActive
-                      ? "1.5px solid rgba(0,102,255,0.2)"
+                      ? "1.5px solid #0066ff"
                       : "1.5px solid #d1d5db",
-                    background: isActive ? "rgba(0,102,255,0.08)" : "white",
-                    color: isActive ? "#0066ff" : "#333",
+                    background: isActive ? "#0066ff" : "white",
+                    color: isActive ? "white" : "#333",
                     fontSize: "13px",
                     fontWeight: 600,
                     cursor: "pointer",
@@ -265,11 +223,10 @@ export default function FilterBar({
                   borderRadius: "999px",
                   border:
                     maxPrice !== null
-                      ? "1.5px solid rgba(0,102,255,0.2)"
+                      ? "1.5px solid #0066ff"
                       : "1.5px solid #d1d5db",
-                  background:
-                    maxPrice !== null ? "rgba(0,102,255,0.08)" : "white",
-                  color: maxPrice !== null ? "#0066ff" : "#333",
+                  background: maxPrice !== null ? "#0066ff" : "white",
+                  color: maxPrice !== null ? "white" : "#333",
                   fontSize: "13px",
                   fontWeight: 600,
                   cursor: "pointer",
@@ -297,7 +254,7 @@ export default function FilterBar({
                   <div
                     style={{
                       position: "fixed",
-                      bottom: pricePopupPos.bottom,
+                      top: pricePopupPos.top,
                       left: pricePopupPos.left,
                       zIndex: 201,
                       pointerEvents: "auto",
@@ -312,8 +269,8 @@ export default function FilterBar({
                       opacity: priceSliderVisible ? 1 : 0,
                       transform: priceSliderVisible
                         ? "translateY(0) scale(1)"
-                        : "translateY(8px) scale(0.96)",
-                      transformOrigin: "bottom left",
+                        : "translateY(-8px) scale(0.96)",
+                      transformOrigin: "top left",
                       transition:
                         "opacity 0.18s cubic-bezier(0.4,0,0.2,1), transform 0.18s cubic-bezier(0.4,0,0.2,1)",
                     }}
@@ -357,7 +314,7 @@ export default function FilterBar({
                         marginBottom: "14px",
                       }}
                     >
-                      최저가 {sliderValue.toLocaleString()}
+                      {T.minPrice} {sliderValue.toLocaleString()}
                       {T.priceUnitPlain} {T.priceFilterDesc}
                     </div>
                     <input
@@ -454,10 +411,10 @@ export default function FilterBar({
                     padding: "6px 14px",
                     borderRadius: "999px",
                     border: isActive
-                      ? "1.5px solid rgba(0,102,255,0.2)"
+                      ? "1.5px solid #0066ff"
                       : "1.5px solid #d1d5db",
-                    background: isActive ? "rgba(0,102,255,0.08)" : "white",
-                    color: isActive ? "#0066ff" : "#333",
+                    background: isActive ? "#0066ff" : "white",
+                    color: isActive ? "white" : "#333",
                     fontSize: "13px",
                     fontWeight: 600,
                     cursor: "pointer",

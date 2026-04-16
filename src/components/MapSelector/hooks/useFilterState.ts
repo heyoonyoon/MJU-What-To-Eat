@@ -24,13 +24,14 @@ export function useFilterState() {
 
   const filteredList = useMemo<Restaurant[]>(() => {
     const q = searchQuery.trim().toLowerCase();
+    const menuQ = q && appliedTarget === "menu" ? q : undefined;
     return restaurants.filter((r) => {
       const typeOk = filters.type.length === 0 || filters.type.includes(r.type);
       const catOk =
         filters.cat.includes("전체") || filters.cat.includes(r.category);
       const zoneOk = filters.zone.length === 0 || filters.zone.includes(r.zone);
       const tagsOk = applyTagFilter(r, filters.tags);
-      const priceOk = applyPriceFilter(r, maxPrice);
+      const priceOk = applyPriceFilter(r, maxPrice, menuQ);
       if (!typeOk || !catOk || !zoneOk || !tagsOk || !priceOk) return false;
       if (!q) return true;
       if (appliedTarget === "name") return r.name.toLowerCase().includes(q);
@@ -47,6 +48,12 @@ export function useFilterState() {
     const q = searchQuery.trim().toLowerCase();
     // 가게명 검색 모드: 메뉴 카드 대신 가게 카드 표시
     if (q && appliedTarget === "name") return null;
+    // 메뉴 검색도 없고 가격 필터도 없으면 전체 메뉴 ID 세트 반환 (메뉴 그리드 기본)
+    if (!q && maxPrice == null) {
+      const all = new Set<string>();
+      filteredList.forEach((r) => r.menus.forEach((m) => all.add(`${r.id}-${m.menuId}`)));
+      return all;
+    }
 
     const ids = new Set<string>();
     filteredList.forEach((r) => {
@@ -101,6 +108,7 @@ export function useFilterState() {
       setFocusTarget: React.Dispatch<React.SetStateAction<Restaurant | null>>,
     ): number => {
       const q = query.trim().toLowerCase();
+      const menuQ = q && target === "menu" ? q : undefined;
       const matched = q
         ? restaurants.filter((r) => {
             const typeOk =
@@ -110,7 +118,7 @@ export function useFilterState() {
             const zoneOk =
               filters.zone.length === 0 || filters.zone.includes(r.zone);
             const tagsOk = applyTagFilter(r, filters.tags);
-            const priceOk = applyPriceFilter(r, maxPrice);
+            const priceOk = applyPriceFilter(r, maxPrice, menuQ);
             if (!typeOk || !catOk || !zoneOk || !tagsOk || !priceOk)
               return false;
             if (target === "name") return r.name.toLowerCase().includes(q);

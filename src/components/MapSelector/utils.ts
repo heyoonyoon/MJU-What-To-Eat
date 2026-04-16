@@ -24,8 +24,19 @@ export const applyTagFilter = (r: Restaurant, tags: string[]): boolean => {
 export const applyPriceFilter = (
   r: Restaurant,
   mp: number | null,
+  menuSearchQuery?: string,
 ): boolean => {
   if (mp === null) return true;
+  // 메뉴명 검색 중이면 매칭 메뉴들의 최소 가격 기준
+  if (menuSearchQuery) {
+    const q = menuSearchQuery.trim().toLowerCase();
+    const matchedPrices = r.menus
+      .filter((m) => Object.values(m.name).some((v) => v.toLowerCase().includes(q)))
+      .map((m) => m.price)
+      .filter((p): p is number => p != null);
+    if (matchedPrices.length === 0) return false;
+    return Math.min(...matchedPrices) <= mp;
+  }
   if (r.minPrice === null) return false;
   return r.minPrice <= mp;
 };
