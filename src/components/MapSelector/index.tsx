@@ -89,11 +89,6 @@ export default function MapSelector() {
   );
   const [activeTab, setActiveTab] = useState<"map" | "menu">("menu");
   const [markerIslandOpen, setMarkerIslandOpen] = useState(true);
-  const [menuScrollTop, setMenuScrollTop] = useState(0);
-  const [menuContainerHeight, setMenuContainerHeight] = useState(600);
-  const [menuContainerWidth, setMenuContainerWidth] = useState(
-    () => window.innerWidth,
-  );
   const [menuFilterBarHeight, setMenuFilterBarHeight] = useState(160);
   const [headerHeight, setHeaderHeight] = useState(70);
 
@@ -103,12 +98,13 @@ export default function MapSelector() {
   const headerRowRef = useRef<HTMLDivElement | null>(null);
   // 탭 전환 후 MenuView 재마운트 시 스크롤 위치 복원을 위한 ref
   const savedMenuScrollTop = useRef(0);
+  // 탭 복원용 scroll 리스너 정리 ref
+  const savedScrollListenerCleanup = useRef<(() => void) | null>(null);
 
   // 필터 변경 시 스크롤 리셋
-  // scrollTo fires the onScroll handler which updates menuScrollTop via onScrollTopChange
   useEffect(() => {
     savedMenuScrollTop.current = 0;
-    menuScrollRef.current?.scrollTo(0, 0);
+    menuScrollRef.current?.scrollTo({ top: 0 });
   }, [filteredList]);
 
   // --- 핸들러 ---
@@ -679,27 +675,26 @@ export default function MapSelector() {
                 ? rolledMenuIdSet
                 : filteredMenuIds
           }
-          menuScrollTop={menuScrollTop}
-          menuContainerHeight={menuContainerHeight}
-          menuContainerWidth={menuContainerWidth}
           menuFilterBarHeight={menuFilterBarHeight}
           scrollPaddingTop={menuFilterBarHeight}
           scrollPaddingBottom={124}
           onScrollRefReady={(node) => {
+            // 이전 리스너 정리
+            savedScrollListenerCleanup.current?.();
+            savedScrollListenerCleanup.current = null;
             menuScrollRef.current = node;
-            if (node && savedMenuScrollTop.current > 0) {
-              // 탭에서 돌아왔을 때 저장된 스크롤 위치로 복원
+            if (!node) return;
+            // 탭에서 돌아왔을 때 저장된 스크롤 위치로 복원
+            if (savedMenuScrollTop.current > 0) {
               node.scrollTop = savedMenuScrollTop.current;
-              setMenuScrollTop(savedMenuScrollTop.current);
             }
-          }}
-          onScrollTopChange={(top) => {
-            savedMenuScrollTop.current = top;
-            setMenuScrollTop(top);
-          }}
-          onContainerResize={(h, w) => {
-            setMenuContainerHeight(h);
-            setMenuContainerWidth(w);
+            // 탭 위치 저장용 리스너 (state 업데이트 없음 — ref만 업데이트)
+            const handler = () => {
+              savedMenuScrollTop.current = node.scrollTop;
+            };
+            node.addEventListener("scroll", handler, { passive: true });
+            savedScrollListenerCleanup.current = () =>
+              node.removeEventListener("scroll", handler);
           }}
           onRestaurantClick={openShopModal}
         />

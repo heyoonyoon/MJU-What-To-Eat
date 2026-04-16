@@ -1,15 +1,14 @@
 import { useLang } from "../../../LangContext";
 import { t, CAT_KEY_MAP, TAG_KEY_MAP } from "../../../i18n";
 import type { Restaurant } from "../../../data2";
+import { useVirtualScroll } from "../hooks/useVirtualScroll";
 
 type MenuItem = { restaurant: Restaurant; menu: Restaurant["menus"][number] };
 
 type Props = {
   allMenuItems: MenuItem[];
-  menuScrollTop: number;
-  menuContainerHeight: number;
-  menuContainerWidth: number;
   menuFilterBarHeight: number;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
   onRestaurantClick: (r: Restaurant) => void;
 };
 
@@ -17,14 +16,14 @@ const OVERSCAN = 3;
 
 export default function MenuCardList({
   allMenuItems,
-  menuScrollTop,
-  menuContainerHeight,
-  menuContainerWidth,
   menuFilterBarHeight,
+  scrollRef,
   onRestaurantClick,
 }: Props) {
   const { lang } = useLang();
   const T = t[lang];
+  const { scrollTop, containerHeight, containerWidth } =
+    useVirtualScroll(scrollRef);
 
   const translateLabel = (label: string): string => {
     const catKey = CAT_KEY_MAP[label];
@@ -42,7 +41,7 @@ export default function MenuCardList({
     vi: string;
   }) => name[lang] || name.ko;
 
-  const w = menuContainerWidth;
+  const w = containerWidth;
   const cols = w >= 1024 ? 5 : w >= 768 ? 4 : w >= 640 ? 3 : 2;
   const gap = 10;
   const hPad = 12;
@@ -51,10 +50,10 @@ export default function MenuCardList({
   const PADDING_H = menuFilterBarHeight;
   const totalRows = Math.ceil(allMenuItems.length / cols);
   const totalContentH = totalRows * GRID_ROW_H + PADDING_H;
-  const scrolledRows = Math.floor(Math.max(0, menuScrollTop) / GRID_ROW_H);
+  const scrolledRows = Math.floor(Math.max(0, scrollTop) / GRID_ROW_H);
   const startRow = Math.max(0, scrolledRows - OVERSCAN);
   const visibleStart = startRow * cols;
-  const endRows = Math.ceil((menuScrollTop + menuContainerHeight) / GRID_ROW_H);
+  const endRows = Math.ceil((scrollTop + containerHeight) / GRID_ROW_H);
   const endRow = Math.min(totalRows, Math.ceil(endRows + OVERSCAN));
   const visibleEnd = Math.min(allMenuItems.length, endRow * cols);
 

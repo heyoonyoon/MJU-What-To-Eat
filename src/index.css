@@ -9,3 +9,8 @@ html, body {
 * {
   touch-action: manipulation;
 }
+
+/* iOS Safari 관성 스크롤 활성화 */
+[data-scroll] {
+  -webkit-overflow-scrolling: touch;
+}

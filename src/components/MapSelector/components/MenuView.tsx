@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type { Restaurant } from "../../../data2";
 import ShopCardList from "./ShopCardList";
 import MenuCardList from "./MenuCardList";
@@ -5,30 +6,20 @@ import MenuCardList from "./MenuCardList";
 type Props = {
   filteredList: Restaurant[];
   filteredMenuIds: Set<string> | null;
-  menuScrollTop: number;
-  menuContainerHeight: number;
-  menuContainerWidth: number;
   menuFilterBarHeight: number;
   scrollPaddingTop: number;
   scrollPaddingBottom: number;
   onScrollRefReady: (node: HTMLDivElement | null) => void;
-  onScrollTopChange: (top: number) => void;
-  onContainerResize: (height: number, width: number) => void;
   onRestaurantClick: (r: Restaurant) => void;
 };
 
 export default function MenuView({
   filteredList,
   filteredMenuIds,
-  menuScrollTop,
-  menuContainerHeight,
-  menuContainerWidth,
   menuFilterBarHeight,
   scrollPaddingTop,
   scrollPaddingBottom,
   onScrollRefReady,
-  onScrollTopChange,
-  onContainerResize,
   onRestaurantClick,
 }: Props) {
   // filteredMenuIds === null: 가게명 검색 → 가게 카드 모드
@@ -41,6 +32,9 @@ export default function MenuView({
           .filter((m) => filteredMenuIds.has(`${r.id}-${m.menuId}`))
           .map((m) => ({ restaurant: r, menu: m })),
       );
+
+  // scroll 컨테이너 ref: 자식 컴포넌트가 직접 구독하여 virtual scroll 계산
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   return (
     <div
@@ -60,41 +54,31 @@ export default function MenuView({
       {/* 스크롤 컨테이너 */}
       <div
         ref={(node) => {
+          scrollRef.current = node;
           onScrollRefReady(node);
-          if (!node) return;
-          onContainerResize(node.clientHeight, node.clientWidth);
-          const ro = new ResizeObserver(() => {
-            onContainerResize(node.clientHeight, node.clientWidth);
-          });
-          ro.observe(node);
-          (node as HTMLDivElement & { _ro?: ResizeObserver })._ro?.disconnect();
-          (node as HTMLDivElement & { _ro?: ResizeObserver })._ro = ro;
         }}
-        onScroll={(e) =>
-          onScrollTopChange((e.target as HTMLDivElement).scrollTop)
-        }
+        data-scroll
         style={{
           flex: 1,
           overflowY: "auto",
           paddingTop: scrollPaddingTop,
           paddingBottom: scrollPaddingBottom,
+          // 스크롤 합성 최적화 (layout/paint 격리, size는 제외 — padding 때문)
+          contain: "content",
         }}
       >
         {isRestaurantMode ? (
           <ShopCardList
             filteredList={filteredList}
-            menuScrollTop={menuScrollTop}
-            menuContainerHeight={menuContainerHeight}
             menuFilterBarHeight={menuFilterBarHeight}
+            scrollRef={scrollRef}
             onRestaurantClick={onRestaurantClick}
           />
         ) : (
           <MenuCardList
             allMenuItems={allMenuItems}
-            menuScrollTop={menuScrollTop}
-            menuContainerHeight={menuContainerHeight}
-            menuContainerWidth={menuContainerWidth}
             menuFilterBarHeight={menuFilterBarHeight}
+            scrollRef={scrollRef}
             onRestaurantClick={onRestaurantClick}
           />
         )}

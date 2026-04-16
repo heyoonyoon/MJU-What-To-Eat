@@ -1,12 +1,12 @@
 import { useLang } from "../../../LangContext";
 import { t, CAT_KEY_MAP, TAG_KEY_MAP } from "../../../i18n";
 import type { Restaurant } from "../../../data2";
+import { useVirtualScroll } from "../hooks/useVirtualScroll";
 
 type Props = {
   filteredList: Restaurant[];
-  menuScrollTop: number;
-  menuContainerHeight: number;
   menuFilterBarHeight: number;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
   onRestaurantClick: (r: Restaurant) => void;
 };
 
@@ -15,13 +15,13 @@ const OVERSCAN = 3;
 
 export default function ShopCardList({
   filteredList,
-  menuScrollTop,
-  menuContainerHeight,
   menuFilterBarHeight,
+  scrollRef,
   onRestaurantClick,
 }: Props) {
   const { lang } = useLang();
   const T = t[lang];
+  const { scrollTop, containerHeight } = useVirtualScroll(scrollRef);
 
   const translateLabel = (label: string): string => {
     const catKey = CAT_KEY_MAP[label];
@@ -40,9 +40,9 @@ export default function ShopCardList({
   }) => name[lang] || name.ko;
 
   const totalContentH = filteredList.length * SHOP_ROW_H + menuFilterBarHeight;
-  const firstIdx = Math.floor(Math.max(0, menuScrollTop) / SHOP_ROW_H);
+  const firstIdx = Math.floor(Math.max(0, scrollTop) / SHOP_ROW_H);
   const visibleStart = Math.max(0, firstIdx - OVERSCAN);
-  const lastIdx = Math.ceil((menuScrollTop + menuContainerHeight) / SHOP_ROW_H);
+  const lastIdx = Math.ceil((scrollTop + containerHeight) / SHOP_ROW_H);
   const visibleEnd = Math.min(filteredList.length, lastIdx + OVERSCAN);
   const topSpacerH = visibleStart * SHOP_ROW_H;
   const bottomSpacerH = (filteredList.length - visibleEnd) * SHOP_ROW_H;
