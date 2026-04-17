@@ -35,6 +35,7 @@ export default function MapSelector() {
     filteredList,
     filteredMenuIds,
     toggleFilter,
+    applyFilterSheet,
     applySearch,
     sortOrder,
     setSortOrder,
@@ -1027,13 +1028,13 @@ export default function MapSelector() {
         <FilterSheet
           filters={filters}
           maxPrice={maxPrice}
-          onToggleFilter={toggleFilter}
-          onApplyPrice={(val) => {
-            if (val === null) {
+          onApply={(localFilters, localMaxPrice) => {
+            applyFilterSheet(localFilters.cat, localFilters.tags);
+            if (localMaxPrice === null) {
               handleClearPrice();
             } else {
-              setMaxPrice(val);
-              setSliderValue(val);
+              setMaxPrice(localMaxPrice);
+              setSliderValue(localMaxPrice);
               setMarkerModes((prev) => prev.has("menu") ? prev : new Set([...prev, "menu"]));
             }
             closeFilterSheet();

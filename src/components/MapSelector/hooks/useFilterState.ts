@@ -110,6 +110,13 @@ export function useFilterState() {
     setMaxPrice(null);
   }, []);
 
+  const applyFilterSheet = useCallback(
+    (cat: string[], tags: string[]) => {
+      setFilters((prev) => ({ ...prev, cat, tags }));
+    },
+    [],
+  );
+
   const applySearch = useCallback(
     (
       query: string,
@@ -164,6 +171,7 @@ export function useFilterState() {
     filteredMenuIds,
     toggleFilter,
     clearTagFilters,
+    applyFilterSheet,
     applySearch,
     sortOrder,
     setSortOrder,
