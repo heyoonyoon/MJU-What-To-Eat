@@ -1,3 +1,5 @@
+**MANDATORY: Always split components by feature unit. Never keep logic, JSX, and state together in one file if it exceeds 200 lines. Extract hooks to hooks/, UI blocks to components/. This rule has NO exceptions.**
+
 Core Constraints
 File Limits: Max 200 lines. Exceeding 500 lines REQUIRES splitting (hooks/components/utils).
 No Prop Refs: Never pass ref as a prop. Use onXxxReady: (node: T | null) => void for parent-child DOM syncing.
@@ -18,7 +20,13 @@ Context Layering & Efficiency (Tokens)
 2. **Analysis**: The Planner will analyze the requirement and create `CLAUDE_TASK.md`.
 3. **Execution**: Follow the Planner's routing (Short-cut or Contract-based) to continue.
 
-_Environment Note: Local Node/icu4c mismatch prevents CLI runtime execution. Use browser for verification._
+### Build & Verification
+
+**MANDATORY: After every code modification, run the build and fix ALL errors before reporting the task as done.**
+
+Build command: `PATH=~/.nvm/versions/node/v24.14.1/bin:$PATH npm run build`
+
+Fix any TypeScript or build errors immediately and re-run until `✓ built` is confirmed.
 
 ### Glassmorphism Design System
 

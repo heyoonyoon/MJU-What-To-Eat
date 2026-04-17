@@ -1,5 +1,5 @@
 import { useLang } from "../../../LangContext";
-import { t, CAT_KEY_MAP, TAG_KEY_MAP } from "../../../i18n";
+import { t } from "../../../i18n";
 import type { Restaurant } from "../../../types/restaurant";
 import { useVirtualScroll } from "../hooks/useVirtualScroll";
 
@@ -29,13 +29,6 @@ export default function MenuCardList({
   const { scrollTop, containerHeight, containerWidth } =
     useVirtualScroll(scrollRef);
 
-  const translateLabel = (label: string): string => {
-    const catKey = CAT_KEY_MAP[label];
-    if (catKey) return T[catKey] ?? label;
-    const tagKey = TAG_KEY_MAP[label];
-    if (tagKey) return T[tagKey] ?? label;
-    return label;
-  };
 
   const menuName = (name: {
     ko: string;

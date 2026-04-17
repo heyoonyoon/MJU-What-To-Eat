@@ -24,8 +24,8 @@ export interface Cluster {
  *                  → 원래 위치에 수직으로 나열
  */
 const CLUSTER_MIN_SIZE = 3; // 이 이상이면 클러스터 버블
-const GRID_PIXEL = 60;      // 클러스터 격자 크기 (픽셀)
-const STACK_PIXEL = 10;     // 이 이내면 "같은 건물" → 수직 나열
+const GRID_PIXEL = 60; // 클러스터 격자 크기 (픽셀)
+const STACK_PIXEL = 10; // 이 이내면 "같은 건물" → 수직 나열
 
 export interface StackedGroup {
   restaurants: Restaurant[];
@@ -46,8 +46,13 @@ function latLngToPixel(
 export function computeClusters(
   visibleRestaurants: Restaurant[],
   map: naver.maps.Map,
-): { clusters: Cluster[]; singles: Restaurant[]; stackedGroups: StackedGroup[] } {
-  if (visibleRestaurants.length === 0) return { clusters: [], singles: [], stackedGroups: [] };
+): {
+  clusters: Cluster[];
+  singles: Restaurant[];
+  stackedGroups: StackedGroup[];
+} {
+  if (visibleRestaurants.length === 0)
+    return { clusters: [], singles: [], stackedGroups: [] };
 
   // 픽셀 좌표로 변환
   const entries = visibleRestaurants
@@ -134,7 +139,7 @@ export function buildClusterContent(
             if (m.price == null) return acc;
             return acc == null ? m.price : Math.min(acc, m.price);
           }, null)
-        : r.minPrice ?? null;
+        : (r.minPrice ?? null);
     if (candidate != null && (minPrice == null || candidate < minPrice)) {
       minPrice = candidate;
     }
@@ -202,8 +207,10 @@ export function buildStackedMarkerContent(
     }
     if (modes.has("menu")) {
       const primaryMatched = visibleMenus.filter((m) => m.isPrimary);
-      const displayMenus = primaryMatched.length > 0 ? primaryMatched : visibleMenus;
-      const menuName = displayMenus[0]?.name[lang] || displayMenus[0]?.name.ko || "";
+      const displayMenus =
+        primaryMatched.length > 0 ? primaryMatched : visibleMenus;
+      const menuName =
+        displayMenus[0]?.name[lang] || displayMenus[0]?.name.ko || "";
       const rest = displayMenus.length - 1;
       const menuText = rest > 0 ? `${menuName} +${rest}` : menuName;
       if (menuText)
@@ -212,7 +219,9 @@ export function buildStackedMarkerContent(
         );
     }
 
-    const inner = lines.map((l) => `<div style="line-height:1.4;">${l}</div>`).join("");
+    const inner = lines
+      .map((l) => `<div style="line-height:1.4;">${l}</div>`)
+      .join("");
     return `<div style="background:white;padding:4px 8px;border-radius:10px;border:1.5px solid #0066ff;font-size:11px;font-weight:700;color:#333;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.12);line-height:1.5;">${inner}</div>`;
   });
 
@@ -258,7 +267,8 @@ export function buildSingleMarkerContent(
   }
   if (modes.has("menu")) {
     const primaryMatched = visibleMenus.filter((m) => m.isPrimary);
-    const displayMenus = primaryMatched.length > 0 ? primaryMatched : visibleMenus;
+    const displayMenus =
+      primaryMatched.length > 0 ? primaryMatched : visibleMenus;
     const MAX_CHARS = 25;
     let menuText = "";
     let shown = 0;
@@ -277,6 +287,8 @@ export function buildSingleMarkerContent(
       );
   }
 
-  const inner = lines.map((l) => `<div style="line-height:1.4;">${l}</div>`).join("");
+  const inner = lines
+    .map((l) => `<div style="line-height:1.4;">${l}</div>`)
+    .join("");
   return `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;"><div style="background:white;padding:4px 8px;border-radius:10px;border:1.5px solid #0066ff;font-size:11px;font-weight:700;color:#333;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.15);line-height:1.5;">${inner}</div></div>`;
 }

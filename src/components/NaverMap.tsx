@@ -41,7 +41,9 @@ const NaverMap: React.FC<NaverMapProps> = ({
   // 최신 값을 ref로 유지 (클로저 stale 방지)
   const displayListRef = useRef<Restaurant[] | undefined>(displayList);
   const markerModesRef = useRef<MarkerModes>(markerModes);
-  const filteredMenuIdsRef = useRef<Set<string> | null | undefined>(filteredMenuIds);
+  const filteredMenuIdsRef = useRef<Set<string> | null | undefined>(
+    filteredMenuIds,
+  );
   const langRef = useRef(lang);
 
   displayListRef.current = displayList;
@@ -90,7 +92,10 @@ const NaverMap: React.FC<NaverMapProps> = ({
       activeMarkersRef.current = [];
 
       const visible = displayListRef.current ?? restaurants;
-      const { clusters, singles, stackedGroups } = computeClusters(visible, map);
+      const { clusters, singles, stackedGroups } = computeClusters(
+        visible,
+        map,
+      );
 
       // ── 클러스터 버블 마커 (3개 이상, 가격 요약 표시) ──
       clusters.forEach((cluster) => {

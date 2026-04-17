@@ -4,7 +4,10 @@ import { t } from "../i18n";
 
 interface FilterPanelProps {
   filters: { type: string[]; cat: string[]; zone: string[]; tags: string[] };
-  onToggleFilter: (key: "type" | "cat" | "zone" | "tags", value: string) => void;
+  onToggleFilter: (
+    key: "type" | "cat" | "zone" | "tags",
+    value: string,
+  ) => void;
   onReset: () => void;
 }
 

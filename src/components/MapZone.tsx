@@ -85,12 +85,12 @@ export function MapZone({ filters }: MapZoneProps) {
   return (
     <div className="w-full max-w-3xl mx-auto px-4 mt-6 font-sans">
       {/* 상태 확인용 UI (개발 다 끝나면 지워도 됨) */}
-      <div 
+      <div
         className="w-full rounded-2xl shadow-lg border border-white/40 overflow-hidden relative p-6"
         style={{
           background: "rgba(255, 255, 255, 0.65)",
           backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)"
+          WebkitBackdropFilter: "blur(16px)",
         }}
       >
         {/* 안내 메시지 */}
