@@ -63,4 +63,10 @@ export const zh = {
   viewList: "列表",
   noMinPrice: "价格待定",
   primaryMenu: "招牌",
+  searchResultCount: "搜索结果 {n} 件",
+  sort: "排序",
+  sortDefault: "默认",
+  sortPriceLow: "价格从低到高",
+  sortPriceHigh: "价格从高到低",
+  filterSheet: "筛选",
 };

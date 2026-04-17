@@ -63,4 +63,10 @@ export const vi = {
   viewList: "Danh sách",
   noMinPrice: "Chưa có giá",
   primaryMenu: "Đặc sắc",
+  searchResultCount: "{n} kết quả",
+  sort: "Sắp xếp",
+  sortDefault: "Mặc định",
+  sortPriceLow: "Giá thấp đến cao",
+  sortPriceHigh: "Giá cao đến thấp",
+  filterSheet: "Bộ lọc",
 };

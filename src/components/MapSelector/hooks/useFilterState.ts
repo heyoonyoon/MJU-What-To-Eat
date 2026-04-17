@@ -11,6 +11,8 @@ export type Filters = {
   tags: string[];
 };
 
+export type SortOrder = "default" | "priceLow" | "priceHigh";
+
 export function useFilterState() {
   const [filters, setFilters] = useState<Filters>({
     type: [],
@@ -21,11 +23,12 @@ export function useFilterState() {
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedTarget, setAppliedTarget] = useState<"name" | "menu">("menu");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("default");
 
   const filteredList = useMemo<Restaurant[]>(() => {
     const q = searchQuery.trim().toLowerCase();
     const menuQ = q && appliedTarget === "menu" ? q : undefined;
-    return restaurants.filter((r) => {
+    const base = restaurants.filter((r) => {
       const typeOk = filters.type.length === 0 || filters.type.includes(r.type);
       const catOk =
         filters.cat.includes("전체") || filters.cat.includes(r.category);
@@ -39,7 +42,14 @@ export function useFilterState() {
         Object.values(m.name).some((v) => v.toLowerCase().includes(q)),
       );
     });
-  }, [filters, maxPrice, searchQuery, appliedTarget]);
+    if (sortOrder === "priceLow") {
+      return [...base].sort((a, b) => (a.minPrice ?? Infinity) - (b.minPrice ?? Infinity));
+    }
+    if (sortOrder === "priceHigh") {
+      return [...base].sort((a, b) => (b.minPrice ?? -Infinity) - (a.minPrice ?? -Infinity));
+    }
+    return base;
+  }, [filters, maxPrice, searchQuery, appliedTarget, sortOrder]);
 
   // 메뉴판에서 표시할 메뉴를 정확히 필터링하기 위한 매칭 메뉴 ID 세트
   // - 가게명 검색 시: null (가게 카드 모드)
@@ -155,5 +165,7 @@ export function useFilterState() {
     toggleFilter,
     clearTagFilters,
     applySearch,
+    sortOrder,
+    setSortOrder,
   };
 }

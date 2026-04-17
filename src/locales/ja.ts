@@ -63,4 +63,10 @@ export const ja = {
   viewList: "リスト",
   noMinPrice: "価格未定",
   primaryMenu: "おすすめ",
+  searchResultCount: "検索結果 {n}件",
+  sort: "並び替え",
+  sortDefault: "デフォルト",
+  sortPriceLow: "価格が安い順",
+  sortPriceHigh: "価格が高い順",
+  filterSheet: "フィルター",
 };
