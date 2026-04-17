@@ -51,7 +51,7 @@ export default function SearchModal({
         style={{
           position: "absolute",
           inset: 0,
-          zIndex: 200,
+          zIndex: 10000,
           background: "rgba(0,0,0,0.25)",
         }}
       />
@@ -62,7 +62,7 @@ export default function SearchModal({
           top: "1rem",
           left: "1rem",
           right: "1rem",
-          zIndex: 201,
+          zIndex: 10001,
           background: "rgba(255,255,255,0.97)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",

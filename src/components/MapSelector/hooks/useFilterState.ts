@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { restaurants } from "../../../data2";
-import type { Restaurant } from "../../../data2";
+import type { Restaurant } from "../../../types/restaurant";
 import type { MarkerModeKey, MarkerModes } from "../../NaverMap";
 import { applyTagFilter, applyPriceFilter } from "../utils";
 
@@ -35,7 +35,7 @@ export function useFilterState() {
       if (!typeOk || !catOk || !zoneOk || !tagsOk || !priceOk) return false;
       if (!q) return true;
       if (appliedTarget === "name") return r.name.toLowerCase().includes(q);
-      return r.menus.some((m) =>
+      return (r.menus || []).some((m) =>
         Object.values(m.name).some((v) => v.toLowerCase().includes(q)),
       );
     });
@@ -51,13 +51,13 @@ export function useFilterState() {
     // 메뉴 검색도 없고 가격 필터도 없으면 전체 메뉴 ID 세트 반환 (메뉴 그리드 기본)
     if (!q && maxPrice == null) {
       const all = new Set<string>();
-      filteredList.forEach((r) => r.menus.forEach((m) => all.add(`${r.id}-${m.menuId}`)));
+      filteredList.forEach((r) => (r.menus || []).forEach((m) => all.add(`${r.id}-${m.menuId}`)));
       return all;
     }
 
     const ids = new Set<string>();
     filteredList.forEach((r) => {
-      r.menus.forEach((m) => {
+      (r.menus || []).forEach((m) => {
         const menuNameMatch =
           !q ||
           Object.values(m.name).some((v) => v.toLowerCase().includes(q));
@@ -122,7 +122,7 @@ export function useFilterState() {
             if (!typeOk || !catOk || !zoneOk || !tagsOk || !priceOk)
               return false;
             if (target === "name") return r.name.toLowerCase().includes(q);
-            return r.menus.some((m) =>
+            return (r.menus || []).some((m) =>
               Object.values(m.name).some((v) => v.toLowerCase().includes(q)),
             );
           })

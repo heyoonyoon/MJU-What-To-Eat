@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
-import type { Restaurant } from "../../../data2";
-import { resistY, resistX } from "../utils";
+import type { Restaurant } from "../../../types/restaurant";
+
 
 export function useShopModal() {
   const [selectedRestaurant, setSelectedRestaurant] =
@@ -18,8 +18,7 @@ export function useShopModal() {
   const shopDragLastY = useRef<number>(0);
   const shopDragLastTime = useRef<number>(0);
   const shopDragVelocity = useRef<number>(0);
-  const shopDragStartX = useRef<number>(0);
-  const shopDragCurrentX = useRef<number>(0);
+  const shopDragActive = useRef(false);
 
   const closeShopModal = useCallback(() => {
     const el = shopModalRef.current;
@@ -30,11 +29,9 @@ export function useShopModal() {
     setShopModalClosing(true);
     el.style.animation = "none";
     el.style.transition = "none";
-    el.getBoundingClientRect(); // 강제 reflow
-    el.style.transition =
-      "transform 0.26s cubic-bezier(0.4,0,1,1), opacity 0.22s ease";
-    el.style.transform = "translateX(0) translateY(120%)";
-    el.style.opacity = "0";
+    el.getBoundingClientRect();
+    el.style.transition = "transform 0.26s cubic-bezier(0.4,0,1,1)";
+    el.style.transform = "translateY(120%)";
     setTimeout(() => {
       setSelectedRestaurant(null);
       setShopModalClosing(false);
@@ -62,24 +59,23 @@ export function useShopModal() {
     setIsScrolledToBottom(atBottom);
   }, []);
 
-  const onShopDragStart = useCallback((clientX: number, clientY: number) => {
+  const onShopDragStart = useCallback((_clientX: number, clientY: number, initialOffsetY = 0, skipThreshold = false) => {
     const el = shopModalRef.current;
     if (el) {
       el.style.animation = "none";
       el.style.transition = "none";
       el.style.transform = "translateY(0)";
-      el.style.opacity = "1";
     }
-    shopDragStartX.current = clientX;
     shopDragStartY.current = clientY;
-    shopDragCurrentX.current = 0;
     shopDragCurrentY.current = 0;
     shopDragLastY.current = clientY;
     shopDragLastTime.current = Date.now();
     shopDragVelocity.current = 0;
+    shopDragActive.current = skipThreshold;
+
+    const DRAG_THRESHOLD = 10;
 
     const handleMove = (e: MouseEvent | TouchEvent) => {
-      const cx = "touches" in e ? e.touches[0].clientX : e.clientX;
       const cy = "touches" in e ? e.touches[0].clientY : e.clientY;
       if (shopDragStartY.current === null) return;
       const now = Date.now();
@@ -88,16 +84,16 @@ export function useShopModal() {
       shopDragLastY.current = cy;
       shopDragLastTime.current = now;
       const deltaY = cy - shopDragStartY.current;
-      const deltaX = cx - shopDragStartX.current;
       shopDragCurrentY.current = deltaY;
-      shopDragCurrentX.current = deltaX;
+
+      if (!shopDragActive.current) {
+        if (Math.abs(deltaY) < DRAG_THRESHOLD) return;
+        shopDragActive.current = true;
+      }
+
       if (shopModalRef.current) {
-        const ty = deltaY > 0 ? deltaY : resistY(deltaY);
-        const tx = resistX(deltaX);
-        shopModalRef.current.style.transform = `translateX(${tx}px) translateY(${ty}px)`;
-        shopModalRef.current.style.opacity = String(
-          Math.max(0, 1 - Math.max(0, ty) / 200),
-        );
+        const ty = Math.max(0, deltaY + initialOffsetY);
+        shopModalRef.current.style.transform = `translateY(${ty}px)`;
       }
     };
 
@@ -110,8 +106,14 @@ export function useShopModal() {
       if (shopDragStartY.current === null) return;
       shopDragStartY.current = null;
 
+      if (!shopDragActive.current) {
+        shopDragActive.current = false;
+        return;
+      }
+      shopDragActive.current = false;
+
       const velocity = shopDragVelocity.current;
-      const delta = shopDragCurrentY.current;
+      const delta = shopDragCurrentY.current + initialOffsetY;
       const shouldDismiss = velocity > 0.5 || delta > 80;
 
       if (shouldDismiss) {
@@ -119,10 +121,8 @@ export function useShopModal() {
         const el = shopModalRef.current;
         if (el) {
           el.style.animation = "none";
-          el.style.transition =
-            "transform 0.26s cubic-bezier(0.4,0,1,1), opacity 0.22s ease";
-          el.style.transform = "translateX(0) translateY(120%)";
-          el.style.opacity = "0";
+          el.style.transition = "transform 0.26s cubic-bezier(0.4,0,1,1)";
+          el.style.transform = "translateY(120%)";
         }
         setTimeout(() => {
           setSelectedRestaurant(null);
@@ -131,18 +131,53 @@ export function useShopModal() {
       } else {
         if (shopModalRef.current) {
           shopModalRef.current.style.transition =
-            "transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease";
-          shopModalRef.current.style.transform = "translateX(0) translateY(0)";
-          shopModalRef.current.style.opacity = "1";
+            "transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)";
+          shopModalRef.current.style.transform = "translateY(0)";
         }
       }
     };
 
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleEnd);
-    window.addEventListener("touchmove", handleMove, { passive: true });
+    window.addEventListener("touchmove", handleMove, { passive: false });
     window.addEventListener("touchend", handleEnd);
   }, []);
+
+  // 스크롤 영역 touch — 위로 스와이프 시 scrollTop이 0이면 바텀시트 드래그로 전환
+  // passive: false로 touchmove를 가로채 iOS bounce 자체를 preventDefault로 차단
+  const onScrollAreaTouchStart = useCallback((e: React.TouchEvent) => {
+    const scrollEl = modalScrollRef.current;
+    if (!scrollEl) return;
+    const startY = e.touches[0].clientY;
+    let sheetDragging = false;
+
+    const handleMove = (ev: TouchEvent) => {
+      const cy = ev.touches[0].clientY;
+      const deltaY = cy - startY;
+
+      if (!sheetDragging) {
+        // 위로 스와이프 + 스크롤이 최상단일 때만 전환
+        if (deltaY > 0 && scrollEl.scrollTop <= 0) {
+          sheetDragging = true;
+          ev.preventDefault();
+          // startY를 기준점으로 넘겨 이미 이동한 deltaY가 initialOffsetY로 자연스럽게 이어지도록
+          onShopDragStart(ev.touches[0].clientX, startY, 0, true);
+        }
+        return;
+      }
+
+      // 이미 sheet dragging 모드 — 기본 스크롤 차단
+      ev.preventDefault();
+    };
+
+    const handleEnd = () => {
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleEnd);
+    };
+
+    window.addEventListener("touchmove", handleMove, { passive: false });
+    window.addEventListener("touchend", handleEnd);
+  }, [onShopDragStart]);
 
   return {
     selectedRestaurant,
@@ -155,5 +190,6 @@ export function useShopModal() {
     openShopModal,
     handleModalScroll,
     onShopDragStart,
+    onScrollAreaTouchStart,
   };
 }

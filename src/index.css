@@ -4,8 +4,27 @@ html, body {
   overflow: hidden;
   overscroll-behavior: none;
   height: 100%;
+  background-color: #ffffff;
+}
+
+:root {
+  --sat: env(safe-area-inset-top, 0px);
 }
 
 * {
   touch-action: manipulation;
+}
+
+/* iOS Safari 관성 스크롤 활성화 */
+[data-scroll] {
+  -webkit-overflow-scrolling: touch;
+}
+/* 네이버 지도 로고 및 저작권 숨기기 */
+.nmap_logo, .nmap_copyright,
+[class*="nmap_logo"], [class*="nmap_copyright"],
+.naver-map-logo, .naver-map-copyright {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }

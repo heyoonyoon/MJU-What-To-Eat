@@ -1,4 +1,4 @@
-import type { Restaurant } from "../data2";
+import type { Restaurant } from "../types/restaurant";
 import type { Lang } from "../i18n";
 import { t } from "../i18n";
 
@@ -91,10 +91,11 @@ export function buildSingleMarkerContent(
   const T = t[lang];
   const lines: string[] = [];
 
+  const menus = shop.menus || [];
   const visibleMenus =
     filteredMenuIds != null
-      ? shop.menus.filter((m) => filteredMenuIds.has(`${shop.id}-${m.menuId}`))
-      : shop.menus;
+      ? menus.filter((m) => filteredMenuIds.has(`${shop.id}-${m.menuId}`))
+      : menus;
 
   if (modes.has("price")) {
     const matchedMin =

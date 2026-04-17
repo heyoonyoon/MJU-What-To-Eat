@@ -29,6 +29,8 @@ type Props = {
   onClearPrice: () => void;
   onFilterBarResize: (height: number) => void;
   headerOffset: number;
+  isScrolled?: boolean;
+  zIndex?: number;
 };
 
 export default function FilterBar({
@@ -48,6 +50,7 @@ export default function FilterBar({
   onClearPrice,
   onFilterBarResize,
   headerOffset,
+  zIndex = 100,
 }: Props) {
   const { lang } = useLang();
   const T = t[lang];
@@ -69,7 +72,7 @@ export default function FilterBar({
         top: 0,
         left: 0,
         right: 0,
-        zIndex: 100,
+        zIndex: zIndex,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -85,9 +88,9 @@ export default function FilterBar({
           display: "flex",
           flexDirection: "column",
           gap: "6px",
-          paddingTop: `${headerOffset + 8}px`,
-          paddingBottom: "1rem",
-          background: "none",
+          paddingTop: `${headerOffset + 10}px`,
+          paddingBottom: "10px",
+          background: "transparent",
           pointerEvents: "none",
         }}
       >
@@ -104,7 +107,7 @@ export default function FilterBar({
             style={{
               display: "flex",
               flexDirection: "row",
-              gap: "8px",
+              gap: "2px",
               padding: "0 16px",
               width: "max-content",
             }}
@@ -160,7 +163,7 @@ export default function FilterBar({
             style={{
               display: "flex",
               flexDirection: "row",
-              gap: "8px",
+              gap: "2px",
               padding: "0 16px",
               width: "max-content",
             }}
