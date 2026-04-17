@@ -887,6 +887,7 @@ export default function MapSelector() {
           onFilterBarResize={setMenuFilterBarHeight}
           headerOffset={headerHeight}
           zIndex={501}
+          isMapTab={activeTab === "map"}
         />
       </div>
 

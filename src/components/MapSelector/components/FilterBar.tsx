@@ -26,6 +26,7 @@ type Props = {
   onFilterBarResize: (height: number) => void;
   headerOffset: number;
   zIndex?: number;
+  isMapTab?: boolean;
 };
 
 const CHIP_BASE: React.CSSProperties = {
@@ -65,6 +66,7 @@ export default function FilterBar({
   onFilterBarResize,
   headerOffset,
   zIndex = 100,
+  isMapTab = false,
 }: Props) {
   const { lang } = useLang();
   const T = t[lang];
@@ -136,12 +138,15 @@ export default function FilterBar({
             {/* 정렬 칩 */}
             <button
               ref={sortBtnRef}
-              onClick={() => sortDropdownOpen ? onCloseSortDropdown() : onOpenSortDropdown()}
+              onClick={() => !isMapTab && (sortDropdownOpen ? onCloseSortDropdown() : onOpenSortDropdown())}
               style={{
                 ...CHIP_BASE,
-                border: sortOrder !== "default" ? "1.5px solid #0066ff" : "1.5px solid #d1d5db",
-                background: sortOrder !== "default" ? "#0066ff" : "white",
-                color: sortOrder !== "default" ? "white" : "#333",
+                border: isMapTab ? "1.5px solid #e0e0e0" : sortOrder !== "default" ? "1.5px solid #0066ff" : "1.5px solid #d1d5db",
+                background: isMapTab ? "#f5f5f5" : sortOrder !== "default" ? "#0066ff" : "white",
+                color: isMapTab ? "#bbb" : sortOrder !== "default" ? "white" : "#333",
+                cursor: isMapTab ? "not-allowed" : "pointer",
+                opacity: isMapTab ? 0.6 : 1,
+                transition: "all 0.25s cubic-bezier(0.4,0,0.2,1)",
               }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
