@@ -1,5 +1,6 @@
 import { useLang } from "../../../LangContext";
 import { t, LANG_LABELS } from "../../../i18n";
+import { glassStyle } from "../../GlassPanel";
 
 type Props = {
   searchQuery: string;
@@ -44,9 +45,9 @@ export default function HeaderSection({
       }}
       style={{
         position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
+        top: 8,
+        left: 12,
+        right: 12,
         zIndex: 160,
         display: "flex",
         flexDirection: "column",
@@ -79,11 +80,7 @@ export default function HeaderSection({
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            background: "rgba(255,255,255,0.92)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.6)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+            ...glassStyle("light"),
             borderRadius: "14px",
             padding: "0 14px",
             height: "40px",
@@ -136,11 +133,7 @@ export default function HeaderSection({
             lineHeight: 1,
             padding: "7px 10px",
             height: "40px",
-            background: "rgba(255,255,255,0.85)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.6)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+            ...glassStyle("light"),
             borderRadius: "14px",
             cursor: "pointer",
             display: "flex",

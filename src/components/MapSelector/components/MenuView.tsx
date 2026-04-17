@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import type { Restaurant } from "../../../types/restaurant";
 import ShopCardList from "./ShopCardList";
 import MenuCardList from "./MenuCardList";
@@ -9,6 +9,8 @@ type Props = {
   menuFilterBarHeight: number;
   scrollPaddingTop: number;
   scrollPaddingBottom: number;
+  sortOrder?: "default" | "priceLow" | "priceHigh";
+  isRolled?: boolean;
   onScrollRefReady: (node: HTMLDivElement | null) => void;
   onRestaurantClick: (r: Restaurant) => void;
 };
@@ -19,19 +21,33 @@ export default function MenuView({
   menuFilterBarHeight,
   scrollPaddingTop,
   scrollPaddingBottom,
+  sortOrder,
+  isRolled,
   onScrollRefReady,
   onRestaurantClick,
 }: Props) {
   // filteredMenuIds === null: 가게명 검색 → 가게 카드 모드
   const isRestaurantMode = filteredMenuIds === null;
 
-  const allMenuItems = isRestaurantMode
-    ? []
-    : filteredList.flatMap((r) =>
-        (r.menus || [])
-          .filter((m) => filteredMenuIds.has(`${r.id}-${m.menuId}`))
-          .map((m) => ({ restaurant: r, menu: m })),
-      );
+  const allMenuItems = useMemo(() => {
+    const base = isRestaurantMode
+      ? []
+      : filteredList.flatMap((r) =>
+          (r.menus || [])
+            .filter((m) => (filteredMenuIds as Set<string>).has(`${r.id}-${m.menuId}`))
+            .map((m) => ({ restaurant: r, menu: m })),
+        );
+    if (sortOrder === "priceLow")
+      return [...base].sort((a, b) => (a.menu.price ?? Infinity) - (b.menu.price ?? Infinity));
+    if (sortOrder === "priceHigh")
+      return [...base].sort((a, b) => (b.menu.price ?? -Infinity) - (a.menu.price ?? -Infinity));
+    const arr = [...base];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [filteredList, filteredMenuIds, sortOrder]);
 
   // scroll 컨테이너 ref: 자식 컴포넌트가 직접 구독하여 virtual scroll 계산
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -49,6 +65,7 @@ export default function MenuView({
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        animation: "menuViewFadeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
       }}
     >
       {/* 스크롤 컨테이너 */}
@@ -73,6 +90,7 @@ export default function MenuView({
             menuFilterBarHeight={menuFilterBarHeight}
             scrollRef={scrollRef}
             onRestaurantClick={onRestaurantClick}
+            isRolled={isRolled}
           />
         ) : (
           <MenuCardList
@@ -80,6 +98,7 @@ export default function MenuView({
             menuFilterBarHeight={menuFilterBarHeight}
             scrollRef={scrollRef}
             onRestaurantClick={onRestaurantClick}
+            isRolled={isRolled}
           />
         )}
       </div>

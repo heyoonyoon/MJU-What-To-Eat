@@ -11,6 +11,8 @@ export type Filters = {
   tags: string[];
 };
 
+export type SortOrder = "default" | "priceLow" | "priceHigh";
+
 export function useFilterState() {
   const [filters, setFilters] = useState<Filters>({
     type: [],
@@ -21,7 +23,9 @@ export function useFilterState() {
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedTarget, setAppliedTarget] = useState<"name" | "menu">("menu");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("default");
 
+  // 필터만 적용 (정렬 제외) — 지도 마커용
   const filteredList = useMemo<Restaurant[]>(() => {
     const q = searchQuery.trim().toLowerCase();
     const menuQ = q && appliedTarget === "menu" ? q : undefined;
@@ -40,6 +44,23 @@ export function useFilterState() {
       );
     });
   }, [filters, maxPrice, searchQuery, appliedTarget]);
+
+  // 정렬 적용 — 리스트/메뉴판용
+  const sortedList = useMemo<Restaurant[]>(() => {
+    if (sortOrder === "priceLow") {
+      return [...filteredList].sort((a, b) => (a.minPrice ?? Infinity) - (b.minPrice ?? Infinity));
+    }
+    if (sortOrder === "priceHigh") {
+      return [...filteredList].sort((a, b) => (b.minPrice ?? -Infinity) - (a.minPrice ?? -Infinity));
+    }
+    // default: 랜덤 셔플 (filteredList 변경 시마다 새로 섞음)
+    const arr = [...filteredList];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [filteredList, sortOrder]);
 
   // 메뉴판에서 표시할 메뉴를 정확히 필터링하기 위한 매칭 메뉴 ID 세트
   // - 가게명 검색 시: null (가게 카드 모드)
@@ -100,6 +121,13 @@ export function useFilterState() {
     setMaxPrice(null);
   }, []);
 
+  const applyFilterSheet = useCallback(
+    (cat: string[], tags: string[]) => {
+      setFilters((prev) => ({ ...prev, cat, tags }));
+    },
+    [],
+  );
+
   const applySearch = useCallback(
     (
       query: string,
@@ -151,9 +179,13 @@ export function useFilterState() {
     setSearchQuery,
     appliedTarget,
     filteredList,
+    sortedList,
     filteredMenuIds,
     toggleFilter,
     clearTagFilters,
+    applyFilterSheet,
     applySearch,
+    sortOrder,
+    setSortOrder,
   };
 }

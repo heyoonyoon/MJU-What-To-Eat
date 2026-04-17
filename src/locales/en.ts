@@ -63,4 +63,10 @@ export const en = {
   viewList: "List",
   noMinPrice: "Price TBD",
   primaryMenu: "Main",
+  searchResultCount: "{n} results",
+  sort: "Sort",
+  sortDefault: "Default",
+  sortPriceLow: "Price: Low to High",
+  sortPriceHigh: "Price: High to Low",
+  filterSheet: "Filter",
 };

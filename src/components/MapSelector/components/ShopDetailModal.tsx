@@ -266,88 +266,85 @@ export default function ShopDetailModal({
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: "6px",
                 }}
               >
-                {(restaurant.menus || []).map((menu) => (
+                {(restaurant.menus || []).map((menu, index, arr) => (
                   <div
                     key={menu.menuId}
                     style={{
-                      background: "#f5f5f5",
-                      borderRadius: "10px",
-                      padding: "9px 12px",
+                      padding: "16px 0",
                       display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      border: menu.isPrimary
-                        ? "1.5px solid #ccc"
-                        : "1px solid transparent",
+                      flexDirection: "column",
+                      borderBottom: index < arr.length - 1 ? "1px solid #f0f0f0" : "none",
                     }}
                   >
-                    <div>
-                      <span
+                    {menu.tags && menu.tags.length > 0 && (
+                      <div
                         style={{
-                          fontSize: "13px",
-                          fontWeight: menu.isPrimary ? 700 : 500,
-                          color: "#111",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          color: "#a0a0a0",
+                          textTransform: "uppercase",
+                          marginBottom: "4px",
+                          letterSpacing: "0.5px",
                         }}
                       >
-                        {menuName(menu.name)}
-                      </span>
+                        {menu.tags[0]}
+                      </div>
+                    )}
+                    
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       {menu.isPrimary && (
                         <span
                           style={{
-                            marginLeft: "6px",
-                            fontSize: "10px",
+                            fontSize: "11px",
                             fontWeight: 700,
-                            color: "#555",
-                            background: "#e0e0e0",
-                            borderRadius: "5px",
-                            padding: "1px 5px",
+                            color: "#fff",
+                            background: "#ff542d",
+                            borderRadius: "10px",
+                            padding: "2px 6px",
+                            lineHeight: 1.2,
                           }}
                         >
                           {T.representative}
                         </span>
                       )}
-                      {menu.tags && menu.tags.length > 0 && (
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "4px",
-                            marginTop: "3px",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          {menu.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              style={{
-                                fontSize: "10px",
-                                color: "#888",
-                                background: "#e8e8e8",
-                                borderRadius: "5px",
-                                padding: "1px 5px",
-                              }}
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    {menu.price != null && (
                       <span
                         style={{
-                          fontSize: "13px",
+                          fontSize: "16px",
                           fontWeight: 700,
                           color: "#111",
-                          whiteSpace: "nowrap",
-                          marginLeft: "10px",
+                        }}
+                      >
+                        {menuName(menu.name)}
+                      </span>
+                    </div>
+
+                    {menu.tags && menu.tags.length > 1 && (
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#888",
+                          marginTop: "4px",
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {menu.tags.slice(1).join(" · ")}
+                      </div>
+                    )}
+
+                    {menu.price != null && (
+                      <div
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: 800,
+                          color: "#111",
+                          marginTop: "8px",
                         }}
                       >
                         {menu.price.toLocaleString()}
                         {T.priceUnitPlain}
-                      </span>
+                      </div>
                     )}
                   </div>
                 ))}
