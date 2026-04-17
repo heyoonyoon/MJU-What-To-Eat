@@ -144,6 +144,7 @@ export default function MapSelector() {
 
   const [focusTarget, setFocusTarget] = useState<Restaurant | null>(null);
   const [activeTab, setActiveTab] = useState<"map" | "menu">("menu");
+  const isInitialMenuMount = useRef(true);
   const [menuFilterBarHeight, setMenuFilterBarHeight] = useState(160);
   const [headerHeight, setHeaderHeight] = useState(70);
   const [showHint1, setShowHint1] = useState(false);
@@ -280,6 +281,7 @@ export default function MapSelector() {
             filteredMenuIds={displayMenuIds}
             isRolled={!!rolledRestaurant || !!rolledMenuRestaurant}
             sortOrder={sortOrder}
+            skipAnimation={isInitialMenuMount.current}
             menuFilterBarHeight={menuFilterBarHeight + 8}
             scrollPaddingTop={menuFilterBarHeight + 8}
             scrollPaddingBottom={80}
@@ -300,7 +302,10 @@ export default function MapSelector() {
       <TabFab
         lang={lang}
         activeTab={activeTab}
-        onTabToggle={() => setActiveTab((v) => (v === "map" ? "menu" : "map"))}
+        onTabToggle={() => {
+          isInitialMenuMount.current = false;
+          setActiveTab((v) => (v === "map" ? "menu" : "map"));
+        }}
       />
 
       <div
