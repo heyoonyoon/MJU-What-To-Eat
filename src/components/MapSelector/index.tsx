@@ -805,6 +805,7 @@ export default function MapSelector() {
                 : filteredMenuIds
           }
           isRolled={!!rolledRestaurant || !!rolledMenuRestaurant}
+          sortOrder={sortOrder}
           menuFilterBarHeight={menuFilterBarHeight + 8}
           scrollPaddingTop={menuFilterBarHeight + 8}
           scrollPaddingBottom={80}

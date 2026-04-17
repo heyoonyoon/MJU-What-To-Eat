@@ -9,6 +9,8 @@ type Props = {
   menuFilterBarHeight: number;
   scrollPaddingTop: number;
   scrollPaddingBottom: number;
+  sortOrder?: "default" | "priceLow" | "priceHigh";
+  isRolled?: boolean;
   onScrollRefReady: (node: HTMLDivElement | null) => void;
   onRestaurantClick: (r: Restaurant) => void;
 };
@@ -19,19 +21,28 @@ export default function MenuView({
   menuFilterBarHeight,
   scrollPaddingTop,
   scrollPaddingBottom,
+  sortOrder,
+  isRolled,
   onScrollRefReady,
   onRestaurantClick,
 }: Props) {
   // filteredMenuIds === null: 가게명 검색 → 가게 카드 모드
   const isRestaurantMode = filteredMenuIds === null;
 
-  const allMenuItems = isRestaurantMode
+  const baseMenuItems = isRestaurantMode
     ? []
     : filteredList.flatMap((r) =>
         (r.menus || [])
           .filter((m) => filteredMenuIds.has(`${r.id}-${m.menuId}`))
           .map((m) => ({ restaurant: r, menu: m })),
       );
+
+  const allMenuItems =
+    sortOrder === "priceLow"
+      ? [...baseMenuItems].sort((a, b) => (a.menu.price ?? Infinity) - (b.menu.price ?? Infinity))
+      : sortOrder === "priceHigh"
+      ? [...baseMenuItems].sort((a, b) => (b.menu.price ?? -Infinity) - (a.menu.price ?? -Infinity))
+      : baseMenuItems;
 
   // scroll 컨테이너 ref: 자식 컴포넌트가 직접 구독하여 virtual scroll 계산
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -73,6 +84,7 @@ export default function MenuView({
             menuFilterBarHeight={menuFilterBarHeight}
             scrollRef={scrollRef}
             onRestaurantClick={onRestaurantClick}
+            isRolled={isRolled}
           />
         ) : (
           <MenuCardList
@@ -80,6 +92,7 @@ export default function MenuView({
             menuFilterBarHeight={menuFilterBarHeight}
             scrollRef={scrollRef}
             onRestaurantClick={onRestaurantClick}
+            isRolled={isRolled}
           />
         )}
       </div>
