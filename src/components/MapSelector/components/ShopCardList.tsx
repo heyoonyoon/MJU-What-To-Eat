@@ -7,6 +7,7 @@ type Props = {
   filteredList: Restaurant[];
   menuFilterBarHeight: number;
   scrollRef: React.RefObject<HTMLDivElement | null>;
+  isRolled?: boolean; // Added for roll animation
   onRestaurantClick: (r: Restaurant) => void;
 };
 
@@ -17,6 +18,7 @@ export default function ShopCardList({
   filteredList,
   menuFilterBarHeight,
   scrollRef,
+  isRolled, // Extracted
   onRestaurantClick,
 }: Props) {
   const { lang } = useLang();
@@ -39,10 +41,11 @@ export default function ShopCardList({
     vi: string;
   }) => name[lang] || name.ko;
 
-  const totalContentH = filteredList.length * SHOP_ROW_H + menuFilterBarHeight;
-  const firstIdx = Math.floor(Math.max(0, scrollTop) / SHOP_ROW_H);
+  const totalContentH = filteredList.length * SHOP_ROW_H;
+  const contentScrollTop = Math.max(0, scrollTop - menuFilterBarHeight);
+  const firstIdx = Math.floor(contentScrollTop / SHOP_ROW_H);
   const visibleStart = Math.max(0, firstIdx - OVERSCAN);
-  const lastIdx = Math.ceil((scrollTop + containerHeight) / SHOP_ROW_H);
+  const lastIdx = Math.ceil((contentScrollTop + containerHeight) / SHOP_ROW_H);
   const visibleEnd = Math.min(filteredList.length, lastIdx + OVERSCAN);
   const topSpacerH = visibleStart * SHOP_ROW_H;
   const bottomSpacerH = (filteredList.length - visibleEnd) * SHOP_ROW_H;
@@ -92,6 +95,7 @@ export default function ShopCardList({
             <div
               key={r.id}
               onClick={() => onRestaurantClick(r)}
+              className={isRolled ? "roll-winning-anim" : ""}
               style={{
                 height: SHOP_ROW_H,
                 borderBottom: "1px solid #f0f0f0",
@@ -125,20 +129,7 @@ export default function ShopCardList({
                   >
                     {r.name}
                   </span>
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: 600,
-                      color: "#888",
-                      background: "#f5f5f5",
-                      borderRadius: "5px",
-                      padding: "1px 6px",
-                      flexShrink: 0,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {translateLabel(r.category)}
-                  </span>
+
                 </div>
                 <div
                   style={{

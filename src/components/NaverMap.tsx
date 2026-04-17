@@ -7,6 +7,7 @@ import {
   computeClusters,
   buildClusterContent,
   buildSingleMarkerContent,
+  buildStackedMarkerContent,
   type MarkerModes,
 } from "./clusterMarkers";
 
@@ -89,15 +90,19 @@ const NaverMap: React.FC<NaverMapProps> = ({
       activeMarkersRef.current = [];
 
       const visible = displayListRef.current ?? restaurants;
-      const { clusters, singles } = computeClusters(visible, map);
+      const { clusters, singles, stackedGroups } = computeClusters(visible, map);
 
-      // 클러스터 마커
+      // ── 클러스터 버블 마커 (3개 이상, 가격 요약 표시) ──
       clusters.forEach((cluster) => {
         const marker = new window.naver.maps.Marker({
           position: new window.naver.maps.LatLng(cluster.lat, cluster.lng),
           map,
           icon: {
-            content: buildClusterContent(cluster.restaurants.length),
+            content: buildClusterContent(
+              cluster.restaurants,
+              langRef.current,
+              filteredMenuIdsRef.current,
+            ),
             anchor: new window.naver.maps.Point(22, 22),
           },
           zIndex: 100,
@@ -112,7 +117,45 @@ const NaverMap: React.FC<NaverMapProps> = ({
         activeMarkersRef.current.push(marker);
       });
 
-      // 단일 마커
+      // ── 수직 나열 그룹 (같은 건물, 2개 이상) ──
+      stackedGroups.forEach((group) => {
+        // 그룹 전체를 하나의 마커로 표시 (수직 pill 스택)
+        const marker = new window.naver.maps.Marker({
+          position: new window.naver.maps.LatLng(group.lat, group.lng),
+          map,
+          icon: {
+            content: buildStackedMarkerContent(
+              group.restaurants,
+              langRef.current,
+              markerModesRef.current,
+              filteredMenuIdsRef.current,
+            ),
+            // anchor는 스택 중앙 상단으로 (대략)
+            anchor: new window.naver.maps.Point(0, 0),
+          },
+          zIndex: 50,
+        });
+
+        // 클릭 시 첫 번째 가게 열기 (혹은 zoom in)
+        window.naver.maps.Event.addListener(marker, "click", () => {
+          if (group.restaurants.length === 1) {
+            onMarkerClick?.(group.restaurants[0]);
+          } else {
+            const currentZoom = map.getZoom();
+            if (currentZoom < 20) {
+              map.setZoom(currentZoom + 1, true);
+              map.panTo(new window.naver.maps.LatLng(group.lat, group.lng));
+            } else {
+              // 최대 줌이면 첫 번째 가게 열기
+              onMarkerClick?.(group.restaurants[0]);
+            }
+          }
+        });
+
+        activeMarkersRef.current.push(marker);
+      });
+
+      // ── 단일 마커 ──
       singles.forEach((shop) => {
         if (!shop.lat || !shop.lng) return;
         const marker = new window.naver.maps.Marker({

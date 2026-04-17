@@ -65,6 +65,7 @@ export default function MenuView({
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        animation: "menuViewFadeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
       }}
     >
       {/* 스크롤 컨테이너 */}

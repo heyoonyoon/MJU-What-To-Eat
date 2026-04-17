@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { glassStyle } from "../GlassPanel";
 import NaverMap from "../NaverMap";
 import type { MarkerModeKey, MarkerModes } from "../NaverMap";
 import { useLang } from "../../LangContext";
@@ -476,13 +477,9 @@ export default function MapSelector() {
           {/* 아일랜드 본체 */}
           <div
             style={{
-              background: "rgba(255,255,255,0.88)",
-              backdropFilter: "blur(14px)",
-              WebkitBackdropFilter: "blur(14px)",
+              ...glassStyle("light"),
               borderRadius: "14px 0 0 14px",
               padding: "5px 10px 6px",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
-              border: "1px solid rgba(255,255,255,0.6)",
               borderRight: "none",
               display: "flex",
               flexDirection: "column",
@@ -551,17 +548,13 @@ export default function MapSelector() {
           <button
             onClick={() => setMarkerIslandOpen((v) => !v)}
             style={{
-              background: "rgba(255,255,255,0.88)",
-              backdropFilter: "blur(14px)",
-              WebkitBackdropFilter: "blur(14px)",
-              border: "1px solid rgba(255,255,255,0.6)",
+              ...glassStyle("light"),
               borderLeft: markerIslandOpen
                 ? "1px solid rgba(0,0,0,0.06)"
-                : "1px solid rgba(255,255,255,0.6)",
+                : undefined,
               borderRadius: markerIslandOpen
                 ? "0 14px 14px 0"
                 : "14px 0 0 14px",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
               width: "22px",
               cursor: "pointer",
               display: "flex",
@@ -576,6 +569,60 @@ export default function MapSelector() {
           >
             {markerIslandOpen ? "›" : "‹"}
           </button>
+        </div>
+      )}
+
+      {/* 메뉴판 뷰 */}
+      {activeTab === "menu" && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
+          <MenuView
+          filteredList={
+            rolledRestaurant
+              ? [rolledRestaurant]
+              : rolledMenuRestaurant
+                ? [rolledMenuRestaurant]
+                : sortedList
+          }
+          filteredMenuIds={
+            rolledRestaurant
+              ? null
+              : rolledMenuKey
+                ? rolledMenuIdSet
+                : filteredMenuIds
+          }
+          isRolled={!!rolledRestaurant || !!rolledMenuRestaurant}
+          sortOrder={sortOrder}
+          menuFilterBarHeight={menuFilterBarHeight + 8}
+          scrollPaddingTop={menuFilterBarHeight + 8}
+          scrollPaddingBottom={80}
+          onScrollRefReady={(node) => {
+            // 이전 리스너 정리
+            savedScrollListenerCleanup.current?.();
+            savedScrollListenerCleanup.current = null;
+            menuScrollRef.current = node;
+            if (!node) return;
+            // 탭에서 돌아왔을 때 저장된 스크롤 위치로 복원
+            if (savedMenuScrollTop.current > 0) {
+              node.scrollTop = savedMenuScrollTop.current;
+            }
+            const handler = () => {
+              const scrolled = node.scrollTop > 5;
+              savedMenuScrollTop.current = node.scrollTop;
+              setIsMenuScrolled(scrolled);
+
+              // 더 빠른 반응을 위해 직접 DOM 조작 병행
+              const backdrop = document.querySelector(".header-backdrop");
+              if (backdrop) {
+                if (scrolled) backdrop.classList.add("is-scrolled");
+                else backdrop.classList.remove("is-scrolled");
+              }
+            };
+            node.addEventListener("scroll", handler, { passive: true });
+            savedScrollListenerCleanup.current = () =>
+              node.removeEventListener("scroll", handler);
+          }}
+          onRestaurantClick={openShopModal}
+        />
         </div>
       )}
 
@@ -595,10 +642,12 @@ export default function MapSelector() {
           padding: "6px 8px",
           height: "52px",
           boxSizing: "border-box",
-          background: "#ffffff",
+          background: "rgba(255,255,255,0.88)",
+          border: "1px solid rgba(255,255,255,0.6)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
           borderRadius: "16px",
-          boxShadow: "none",
-          border: "1px solid rgba(0,0,0,0.08)",
         }}
       >
         {/* 되돌리기 버튼: 항상 표시, 비활성 시 disabled 스타일 */}
@@ -666,8 +715,8 @@ export default function MapSelector() {
           style={{
             flex: 1,
             padding: "0",
-            background: filteredList.length === 0 
-              ? "#f5f5f5" 
+            background: filteredList.length === 0
+              ? "#f5f5f5"
               : "#0066ff",
             color: filteredList.length === 0 ? "#ccc" : "white",
             border: "none",
@@ -707,8 +756,8 @@ export default function MapSelector() {
           style={{
             flex: 1,
             padding: "0",
-            background: filteredList.length === 0 
-              ? "#f5f5f5" 
+            background: filteredList.length === 0
+              ? "#f5f5f5"
               : "#0066ff",
             color: filteredList.length === 0 ? "#ccc" : "white",
             border: "none",
@@ -740,10 +789,12 @@ export default function MapSelector() {
           width: "52px",
           height: "52px",
           boxSizing: "border-box",
+          background: "rgba(255,255,255,0.88)",
+          border: "1px solid rgba(255,255,255,0.6)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
           borderRadius: "16px",
-          background: "#ffffff",
-          border: "1px solid rgba(0,0,0,0.08)",
-          boxShadow: "none",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -794,60 +845,6 @@ export default function MapSelector() {
           )}
         </div>
       </button>
-
-      {/* 메뉴판 뷰 */}
-      {activeTab === "menu" && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 1, animation: "menuViewFadeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards" }}>
-          <MenuView
-          filteredList={
-            rolledRestaurant
-              ? [rolledRestaurant]
-              : rolledMenuRestaurant
-                ? [rolledMenuRestaurant]
-                : sortedList
-          }
-          filteredMenuIds={
-            rolledRestaurant
-              ? null
-              : rolledMenuKey
-                ? rolledMenuIdSet
-                : filteredMenuIds
-          }
-          isRolled={!!rolledRestaurant || !!rolledMenuRestaurant}
-          sortOrder={sortOrder}
-          menuFilterBarHeight={menuFilterBarHeight + 8}
-          scrollPaddingTop={menuFilterBarHeight + 8}
-          scrollPaddingBottom={80}
-          onScrollRefReady={(node) => {
-            // 이전 리스너 정리
-            savedScrollListenerCleanup.current?.();
-            savedScrollListenerCleanup.current = null;
-            menuScrollRef.current = node;
-            if (!node) return;
-            // 탭에서 돌아왔을 때 저장된 스크롤 위치로 복원
-            if (savedMenuScrollTop.current > 0) {
-              node.scrollTop = savedMenuScrollTop.current;
-            }
-            const handler = () => {
-              const scrolled = node.scrollTop > 5;
-              savedMenuScrollTop.current = node.scrollTop;
-              setIsMenuScrolled(scrolled);
-
-              // 더 빠른 반응을 위해 직접 DOM 조작 병행
-              const backdrop = document.querySelector(".header-backdrop");
-              if (backdrop) {
-                if (scrolled) backdrop.classList.add("is-scrolled");
-                else backdrop.classList.remove("is-scrolled");
-              }
-            };
-            node.addEventListener("scroll", handler, { passive: true });
-            savedScrollListenerCleanup.current = () =>
-              node.removeEventListener("scroll", handler);
-          }}
-          onRestaurantClick={openShopModal}
-        />
-        </div>
-      )}
 
       {/* 헤더 영역 그룹 (MenuView보다 나중에 배치하여 z-index 및 렌더링 순서 확보) */}
       <div style={{ zIndex: 500, position: "absolute", inset: 0, pointerEvents: "none" }}>

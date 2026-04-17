@@ -85,9 +85,16 @@ export function MapZone({ filters }: MapZoneProps) {
   return (
     <div className="w-full max-w-3xl mx-auto px-4 mt-6 font-sans">
       {/* 상태 확인용 UI (개발 다 끝나면 지워도 됨) */}
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative p-6">
+      <div 
+        className="w-full rounded-2xl shadow-lg border border-white/40 overflow-hidden relative p-6"
+        style={{
+          background: "rgba(255, 255, 255, 0.65)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)"
+        }}
+      >
         {/* 안내 메시지 */}
-        <div className="text-center mb-4 text-gray-600 text-sm font-medium">
+        <div className="text-center mb-4 text-gray-800 text-sm font-semibold">
           지도를 클릭하여 구역을 선택하세요
         </div>
         {/* 네가 만든 원본 비율 그대로 적용 */}
@@ -99,9 +106,9 @@ export function MapZone({ filters }: MapZoneProps) {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          {/* 부모 g 태그에 흰색 stroke를 줘서 구역 사이 도로(여백) 6px 생성 */}
+          {/* 부모 g 태그에 반투명 stroke를 줘서 좀더 부드러운 느낌 */}
           <g
-            stroke="#FFFFFF"
+            stroke="rgba(255,255,255,0.7)"
             strokeWidth="6"
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -112,12 +119,12 @@ export function MapZone({ filters }: MapZoneProps) {
                 d={zone.path}
                 fill={
                   zone.name === "명지대"
-                    ? COLORS.CAMPUS
+                    ? "rgba(155, 153, 147, 0.85)"
                     : filters.zone.includes(zone.name)
                       ? COLORS[zone.colorKey]
-                      : COLORS.EMPTY
+                      : "rgba(241, 243, 245, 0.6)"
                 }
-                className="transition-all duration-300 cursor-default"
+                className="transition-all duration-300 cursor-default hover:opacity-90"
               />
             ))}
           </g>
@@ -133,10 +140,10 @@ export function MapZone({ filters }: MapZoneProps) {
                 fontWeight="bold"
                 fill={
                   zone.name === "명지대"
-                    ? "rgba(255,255,255,0.9)" // 명지대는 흰색으로 더 밝게
+                    ? "rgba(255,255,255,0.95)"
                     : zone.clickable
-                      ? "rgba(0,0,0,0.6)"
-                      : "rgba(0,0,0,0.4)"
+                      ? "rgba(0,0,0,0.65)"
+                      : "rgba(0,0,0,0.45)"
                 }
                 textAnchor="middle"
                 dominantBaseline="middle"
