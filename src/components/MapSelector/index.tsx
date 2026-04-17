@@ -33,6 +33,7 @@ export default function MapSelector() {
     setSearchQuery,
     appliedTarget,
     filteredList,
+    sortedList,
     filteredMenuIds,
     toggleFilter,
     applyFilterSheet,
@@ -114,7 +115,7 @@ export default function MapSelector() {
   useEffect(() => {
     savedMenuScrollTop.current = 0;
     menuScrollRef.current?.scrollTo({ top: 0 });
-  }, [filteredList]);
+  }, [filteredList, sortedList]);
 
   // --- 핸들러 ---
   const openLangMenu = useCallback(() => {
@@ -795,7 +796,7 @@ export default function MapSelector() {
               ? [rolledRestaurant]
               : rolledMenuRestaurant
                 ? [rolledMenuRestaurant]
-                : filteredList
+                : sortedList
           }
           filteredMenuIds={
             rolledRestaurant
