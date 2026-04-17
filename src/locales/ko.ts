@@ -65,7 +65,7 @@ export const ko = {
   primaryMenu: "대표",
   searchResultCount: "검색 결과 {n}건",
   sort: "정렬",
-  sortDefault: "기본순",
+  sortDefault: "랜덤순",
   sortPriceLow: "가격 낮은순",
   sortPriceHigh: "가격 높은순",
   filterSheet: "필터",

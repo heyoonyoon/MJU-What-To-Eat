@@ -53,7 +53,13 @@ export function useFilterState() {
     if (sortOrder === "priceHigh") {
       return [...filteredList].sort((a, b) => (b.minPrice ?? -Infinity) - (a.minPrice ?? -Infinity));
     }
-    return filteredList;
+    // default: 랜덤 셔플 (filteredList 변경 시마다 새로 섞음)
+    const arr = [...filteredList];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   }, [filteredList, sortOrder]);
 
   // 메뉴판에서 표시할 메뉴를 정확히 필터링하기 위한 매칭 메뉴 ID 세트

@@ -37,12 +37,19 @@ export default function MenuView({
           .map((m) => ({ restaurant: r, menu: m })),
       );
 
-  const allMenuItems =
-    sortOrder === "priceLow"
-      ? [...baseMenuItems].sort((a, b) => (a.menu.price ?? Infinity) - (b.menu.price ?? Infinity))
-      : sortOrder === "priceHigh"
-      ? [...baseMenuItems].sort((a, b) => (b.menu.price ?? -Infinity) - (a.menu.price ?? -Infinity))
-      : baseMenuItems;
+  const allMenuItems = (() => {
+    if (sortOrder === "priceLow")
+      return [...baseMenuItems].sort((a, b) => (a.menu.price ?? Infinity) - (b.menu.price ?? Infinity));
+    if (sortOrder === "priceHigh")
+      return [...baseMenuItems].sort((a, b) => (b.menu.price ?? -Infinity) - (a.menu.price ?? -Infinity));
+    // 랜덤 셔플 (filteredList 변경 시마다 새 순서)
+    const arr = [...baseMenuItems];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  })();
 
   // scroll 컨테이너 ref: 자식 컴포넌트가 직접 구독하여 virtual scroll 계산
   const scrollRef = useRef<HTMLDivElement | null>(null);
