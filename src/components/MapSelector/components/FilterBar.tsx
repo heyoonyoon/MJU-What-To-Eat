@@ -2,6 +2,7 @@ import { useLang } from "../../../LangContext";
 import { t, CAT_KEY_MAP, TAG_KEY_MAP } from "../../../i18n";
 import type { SortOrder } from "../hooks/useFilterState";
 import SortDropdown from "./SortDropdown";
+import SearchChip from "./SearchChip";
 
 type Props = {
   filters: {
@@ -11,6 +12,9 @@ type Props = {
     tags: string[];
   };
   maxPrice: number | null;
+  searchQuery: string;
+  appliedTarget: "name" | "menu";
+  onClearSearch: () => void;
   sortOrder: SortOrder;
   sortDropdownOpen: boolean;
   sortDropdownVisible: boolean;
@@ -52,6 +56,9 @@ const X_ICON = (
 export default function FilterBar({
   filters,
   maxPrice,
+  searchQuery,
+  appliedTarget,
+  onClearSearch,
   sortOrder,
   sortDropdownOpen,
   sortDropdownVisible,
@@ -185,6 +192,13 @@ export default function FilterBar({
               )}
             </button>
 
+            {/* 검색 칩 */}
+            <SearchChip
+              searchQuery={searchQuery}
+              appliedTarget={appliedTarget}
+              onClear={onClearSearch}
+            />
+
             {/* 선택된 카테고리 칩들 */}
             {activeCats.map((cat) => (
               <button
@@ -219,6 +233,7 @@ export default function FilterBar({
                 {X_ICON}
               </button>
             )}
+
           </div>
         </div>
       </div>

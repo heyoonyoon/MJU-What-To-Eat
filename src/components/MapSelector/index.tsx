@@ -1,11 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import NaverMap from "../NaverMap";
 import { useLang } from "../../LangContext";
 import type { Lang } from "../../i18n";
 import type { Restaurant } from "../../types/restaurant";
 
 import { useFilterState } from "./hooks/useFilterState";
-import { useShopModal } from "./hooks/useShopModal";
+import { useBottomSheet } from "./hooks/useBottomSheet";
 import { useSearchModal } from "./hooks/useSearchModal";
 import { useToast } from "./hooks/useToast";
 import { useRollState } from "./hooks/useRollState";
@@ -13,7 +13,6 @@ import { useMarkerMode } from "./hooks/useMarkerMode";
 import { useLangMenu } from "./hooks/useLangMenu";
 import { useCopyToast } from "./hooks/useCopyToast";
 import { useSortDropdown } from "./hooks/useSortDropdown";
-import { useFilterSheet } from "./hooks/useFilterSheet";
 import { useMenuScroll } from "./hooks/useMenuScroll";
 
 import HeaderSection from "./components/HeaderSection";
@@ -39,6 +38,7 @@ export default function MapSelector() {
     setMaxPrice,
     searchQuery,
     setSearchQuery,
+    appliedTarget,
     filteredList,
     sortedList,
     filteredMenuIds,
@@ -49,18 +49,47 @@ export default function MapSelector() {
     setSortOrder,
   } = useFilterState();
 
+  const modalScrollRef = useRef<HTMLDivElement | null>(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const scrollHintEnabledRef = useRef(false);
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
+
   const {
-    selectedRestaurant,
-    shopModalClosing,
-    isScrolledToBottom,
-    shopModalRef,
-    modalScrollRef,
-    closeShopModal,
-    openShopModal,
-    handleModalScroll,
-    onShopDragStart,
+    isOpen: shopSheetOpen,
+    open: _openShopSheet,
+    close: closeShopModal,
+    onSheetReady: shopSheetReady,
+    onOverlayReady: shopOverlayReady,
+    onDragStart: shopDragStart,
     onScrollAreaTouchStart,
-  } = useShopModal();
+  } = useBottomSheet({ closeDuration: 260, scrollRef: modalScrollRef });
+
+  const openShopModal = useCallback((r: Restaurant) => {
+    setSelectedRestaurant(r);
+    scrollHintEnabledRef.current = false;
+    setIsScrolledToBottom(false);
+    _openShopSheet();
+    setTimeout(() => {
+      const el = modalScrollRef.current;
+      if (!el) return;
+      const enabled = el.scrollHeight - el.clientHeight >= 120;
+      scrollHintEnabledRef.current = enabled;
+      setIsScrolledToBottom(!enabled);
+    }, 0);
+  }, [_openShopSheet]);
+
+  const handleModalScroll = useCallback(() => {
+    if (!scrollHintEnabledRef.current) return;
+    const el = modalScrollRef.current;
+    if (!el) return;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
+    setIsScrolledToBottom(atBottom);
+  }, []);
+
+  const handleCloseShopModal = useCallback(() => {
+    closeShopModal();
+    setTimeout(() => setSelectedRestaurant(null), 280);
+  }, [closeShopModal]);
 
   const {
     searchModalOpen,
@@ -105,11 +134,13 @@ export default function MapSelector() {
     closeSortDropdown,
   } = useSortDropdown();
   const {
-    filterSheetOpen,
-    filterSheetClosing,
-    openFilterSheet,
-    closeFilterSheet,
-  } = useFilterSheet();
+    isOpen: filterSheetOpen,
+    open: openFilterSheet,
+    close: closeFilterSheet,
+    onSheetReady: filterSheetReady,
+    onOverlayReady: filterOverlayReady,
+    onDragStart: filterSheetDragStart,
+  } = useBottomSheet();
 
   const [focusTarget, setFocusTarget] = useState<Restaurant | null>(null);
   const [activeTab, setActiveTab] = useState<"map" | "menu">("menu");
@@ -304,6 +335,9 @@ export default function MapSelector() {
         <FilterBar
           filters={filters}
           maxPrice={maxPrice}
+          searchQuery={searchQuery}
+          appliedTarget={appliedTarget}
+          onClearSearch={handleClearSearch}
           sortOrder={sortOrder}
           sortDropdownOpen={sortDropdownOpen}
           sortDropdownVisible={sortDropdownVisible}
@@ -356,16 +390,16 @@ export default function MapSelector() {
         />
       )}
 
-      {selectedRestaurant && (
+      {selectedRestaurant && shopSheetOpen && (
         <ShopDetailModal
           restaurant={selectedRestaurant}
-          shopModalClosing={shopModalClosing}
           isScrolledToBottom={isScrolledToBottom}
-          shopModalRef={shopModalRef}
           modalScrollRef={modalScrollRef}
-          onClose={closeShopModal}
+          onClose={handleCloseShopModal}
           onModalScroll={handleModalScroll}
-          onDragStart={onShopDragStart}
+          onSheetReady={shopSheetReady}
+          onOverlayReady={shopOverlayReady}
+          onDragStart={shopDragStart}
           onScrollAreaTouchStart={onScrollAreaTouchStart}
           onCopyToast={showCopyToast}
         />
@@ -387,7 +421,9 @@ export default function MapSelector() {
             closeFilterSheet();
           }}
           onClose={closeFilterSheet}
-          isClosing={filterSheetClosing}
+          onSheetReady={filterSheetReady}
+          onOverlayReady={filterOverlayReady}
+          onDragStart={filterSheetDragStart}
         />
       )}
 
