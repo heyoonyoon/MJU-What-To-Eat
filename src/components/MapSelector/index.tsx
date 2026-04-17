@@ -203,7 +203,7 @@ export default function MapSelector() {
     setRolledId(null);
     // filteredMenuIds가 있으면 그 안에서, null이면 filteredList 전체 메뉴에서 뽑기
     const allMenus = filteredList.flatMap((r) =>
-      r.menus
+      (r.menus || [])
         .filter(
           (m) =>
             filteredMenuIds === null ||
@@ -281,10 +281,7 @@ export default function MapSelector() {
     [lang, showToast],
   );
 
-  const handleScroll = useCallback((node: HTMLDivElement) => {
-    savedMenuScrollTop.current = node.scrollTop;
-    setIsMenuScrolled(node.scrollTop > 10);
-  }, []);
+
 
   return (
     <div style={{ position: "fixed", inset: 0 }}>

@@ -15,8 +15,8 @@ export const applyTagFilter = (r: Restaurant, tags: string[]): boolean => {
   if (tags.length === 0) return true;
   return tags.every((tag) => {
     if (tag === "👤 혼밥") return r.solo;
-    if (tag === "💪 고단백") return r.filters.isHighProtein;
-    if (tag === "🥗 건강식") return r.filters.isHealthy;
+    if (tag === "💪 고단백") return r.filters?.isHighProtein ?? false;
+    if (tag === "🥗 건강식") return r.filters?.isHealthy ?? false;
     return true;
   });
 };
@@ -30,13 +30,15 @@ export const applyPriceFilter = (
   // 메뉴명 검색 중이면 매칭 메뉴들의 최소 가격 기준
   if (menuSearchQuery) {
     const q = menuSearchQuery.trim().toLowerCase();
-    const matchedPrices = r.menus
-      .filter((m) => Object.values(m.name).some((v) => v.toLowerCase().includes(q)))
+    const matchedPrices = (r.menus || [])
+      .filter((m) =>
+        Object.values(m.name).some((v) => v.toLowerCase().includes(q)),
+      )
       .map((m) => m.price)
       .filter((p): p is number => p != null);
     if (matchedPrices.length === 0) return false;
     return Math.min(...matchedPrices) <= mp;
   }
-  if (r.minPrice === null) return false;
+  if (r.minPrice == null) return false;
   return r.minPrice <= mp;
 };

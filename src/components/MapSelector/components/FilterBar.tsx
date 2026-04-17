@@ -50,7 +50,6 @@ export default function FilterBar({
   onClearPrice,
   onFilterBarResize,
   headerOffset,
-  isScrolled,
   zIndex = 100,
 }: Props) {
   const { lang } = useLang();

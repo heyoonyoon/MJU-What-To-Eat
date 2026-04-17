@@ -139,9 +139,9 @@ export default function ShopDetailModal({
           <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
             <span style={tagStyle}>{translateLabel(restaurant.category)}</span>
             {restaurant.solo && <span style={tagStyle}>{T.tagSoloLabel}</span>}
-            {restaurant.filters.isCheap && <span style={tagStyle}>{T.tagCheapLabel}</span>}
-            {restaurant.filters.isHighProtein && <span style={tagStyle}>{T.tagProteinLabel}</span>}
-            {restaurant.filters.isHealthy && <span style={tagStyle}>{T.tagHealthyLabel}</span>}
+            {restaurant.filters?.isCheap && <span style={tagStyle}>{T.tagCheapLabel}</span>}
+            {restaurant.filters?.isHighProtein && <span style={tagStyle}>{T.tagProteinLabel}</span>}
+            {restaurant.filters?.isHealthy && <span style={tagStyle}>{T.tagHealthyLabel}</span>}
           </div>
 
           {/* 주소 + 네이버지도 버튼 (좌우 배치) */}
@@ -250,7 +250,7 @@ export default function ShopDetailModal({
           )}
 
           {/* 메뉴 목록 */}
-          {restaurant.menus.length > 0 && (
+          {(restaurant.menus || []).length > 0 && (
             <div style={{ marginBottom: "0" }}>
               <div
                 style={{
@@ -269,7 +269,7 @@ export default function ShopDetailModal({
                   gap: "6px",
                 }}
               >
-                {restaurant.menus.map((menu) => (
+                {(restaurant.menus || []).map((menu) => (
                   <div
                     key={menu.menuId}
                     style={{

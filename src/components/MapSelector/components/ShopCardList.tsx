@@ -84,7 +84,7 @@ export default function ShopCardList({
       />
       <div style={{ background: "white" }}>
         {filteredList.slice(visibleStart, visibleEnd).map((r) => {
-          const minPrice = r.menus.reduce<number | null>((min, m) => {
+          const minPrice = (r.menus || []).reduce<number | null>((min, m) => {
             if (m.price == null) return min;
             return min == null ? m.price : Math.min(min, m.price);
           }, null);
@@ -149,7 +149,7 @@ export default function ShopCardList({
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {r.menus.map((m) => menuName(m.name)).join(" · ")}
+                  {(r.menus || []).map((m) => menuName(m.name)).join(" · ")}
                 </div>
               </div>
               <div

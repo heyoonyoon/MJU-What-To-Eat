@@ -3,7 +3,9 @@ import { t, CAT_KEY_MAP, TAG_KEY_MAP } from "../../../i18n";
 import type { Restaurant } from "../../../types/restaurant";
 import { useVirtualScroll } from "../hooks/useVirtualScroll";
 
-type MenuItem = { restaurant: Restaurant; menu: Restaurant["menus"][number] };
+import type { Menu } from "../../../types/restaurant";
+
+type MenuItem = { restaurant: Restaurant; menu: Menu };
 
 type Props = {
   allMenuItems: MenuItem[];

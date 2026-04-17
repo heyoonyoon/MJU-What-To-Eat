@@ -28,7 +28,7 @@ export default function MenuView({
   const allMenuItems = isRestaurantMode
     ? []
     : filteredList.flatMap((r) =>
-        r.menus
+        (r.menus || [])
           .filter((m) => filteredMenuIds.has(`${r.id}-${m.menuId}`))
           .map((m) => ({ restaurant: r, menu: m })),
       );
