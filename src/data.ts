@@ -1,29 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // src/data.ts
 
-export interface Restaurant {
-  id: string;
-  name: string;
-  category:
-    | "한식"
-    | "일식"
-    | "중식"
-    | "간편식·분식"
-    | "고기"
-    | "양식·아시안"
-    | "주류"
-    | "카페·디저트"
-    | "종합";
-  type: "식사" | "술집" | "카페";
-  zone: "정문" | "A" | "B" | "C";
-  solo: boolean; // 혼밥 가능 여부 (true: 혼밥 가능, false: 혼밥 어려움)
-  address: string; // 지번 주소
-  roadAddress: string; // 도로명 주소
-  mapx: string; // 네이버 지도 x 좌표
-  mapy: string; // 네이버 지도 y 좌표
-  lat: number; // 위도
-  lng: number; // 경도
-}
+import type { Restaurant } from "./types/restaurant";
 
 export const restaurants: Restaurant[] = [
   // ───────────────────────────────────────────────

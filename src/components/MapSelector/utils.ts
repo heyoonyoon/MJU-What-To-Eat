@@ -1,4 +1,4 @@
-import type { Restaurant } from "../../data2";
+import type { Restaurant } from "../../types/restaurant";
 
 // Y축: 일반 저항 / X축: 강한 저항 (살짝만 움직임)
 export const resistY = (delta: number) => {

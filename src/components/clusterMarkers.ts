@@ -1,4 +1,4 @@
-import type { Restaurant } from "../data2";
+import type { Restaurant } from "../types/restaurant";
 import type { Lang } from "../i18n";
 import { t } from "../i18n";
 

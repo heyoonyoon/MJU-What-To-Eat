@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-import type { Restaurant } from "../data2";
+import type { Restaurant } from "../types/restaurant";
 import { restaurants } from "../data2";
 import { useLang } from "../LangContext";
 import {
@@ -77,9 +77,7 @@ const NaverMap: React.FC<NaverMapProps> = ({
       scrollWheel: true,
       zoomControl: false,
       mapTypeControl: false,
-      logoControlOptions: {
-        position: window.naver.maps.Position.BOTTOM_LEFT,
-      },
+      logoControl: false,
     });
 
     mapRef.current = map;
@@ -159,6 +157,7 @@ const NaverMap: React.FC<NaverMapProps> = ({
         inset: 0,
         width: "100%",
         height: "100%",
+        zIndex: 0,
       }}
     />
   );

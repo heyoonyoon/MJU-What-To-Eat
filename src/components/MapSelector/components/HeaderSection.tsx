@@ -1,33 +1,32 @@
 import { useLang } from "../../../LangContext";
-import { t, LANG_LABELS, LANGS } from "../../../i18n";
-import type { Lang } from "../../../i18n";
+import { t, LANG_LABELS } from "../../../i18n";
+
 type Props = {
   searchQuery: string;
   showHint1: boolean;
   langMenuOpen: boolean;
-  langMenuVisible: boolean;
   headerRowRef: React.RefObject<HTMLDivElement | null>;
+  langBtnRef: React.RefObject<HTMLButtonElement | null>;
   onSearchBarClick: () => void;
   onClearSearch: () => void;
   onDismissHint: () => void;
   onOpenLangMenu: () => void;
   onCloseLangMenu: () => void;
-  onSetLang: (l: Lang) => void;
   onHeaderResize: (height: number) => void;
+  isScrolled?: boolean;
 };
 
 export default function HeaderSection({
   searchQuery,
   showHint1,
   langMenuOpen,
-  langMenuVisible,
   headerRowRef,
+  langBtnRef,
   onSearchBarClick,
   onClearSearch,
   onDismissHint,
   onOpenLangMenu,
   onCloseLangMenu,
-  onSetLang,
   onHeaderResize,
 }: Props) {
   const { lang } = useLang();
@@ -45,14 +44,20 @@ export default function HeaderSection({
       }}
       style={{
         position: "absolute",
-        top: "1rem",
-        left: "1rem",
-        right: "1rem",
+        top: 0,
+        left: 0,
+        right: 0,
         zIndex: 160,
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
-        gap: "6px",
+        gap: "4px",
+        paddingTop: "calc(env(safe-area-inset-top) + 0.8rem)",
+        paddingRight: "1rem",
+        paddingBottom: 0,
+        paddingLeft: "1rem",
+        background: "transparent",
+        pointerEvents: "auto",
       }}
     >
       {/* 첫 번째 행: 검색바 + 언어아이콘 */}
@@ -121,100 +126,31 @@ export default function HeaderSection({
           )}
         </button>
 
-        {/* 언어 선택 */}
-        <div style={{ position: "relative", flexShrink: 0 }}>
-          <button
-            onClick={() =>
-              langMenuOpen ? onCloseLangMenu() : onOpenLangMenu()
-            }
-            title="언어 선택 / Language"
-            style={{
-              fontSize: "20px",
-              lineHeight: 1,
-              padding: "7px 10px",
-              height: "40px",
-              background: "rgba(255,255,255,0.85)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
-              border: "1px solid rgba(255,255,255,0.6)",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-              borderRadius: "14px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            {LANG_LABELS[lang]}
-          </button>
-          {langMenuOpen && (
-            <>
-              <div
-                onClick={onCloseLangMenu}
-                style={{ position: "fixed", inset: 0, zIndex: 150 }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  right: 0,
-                  zIndex: 151,
-                  background: "rgba(255,255,255,0.97)",
-                  backdropFilter: "blur(10px)",
-                  WebkitBackdropFilter: "blur(10px)",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-                  border: "1px solid rgba(255,255,255,0.6)",
-                  overflow: "hidden",
-                  display: "flex",
-                  flexDirection: "column",
-                  opacity: langMenuVisible ? 1 : 0,
-                  transform: langMenuVisible
-                    ? "translateY(0) scale(1)"
-                    : "translateY(-8px) scale(0.96)",
-                  transformOrigin: "top right",
-                  transition:
-                    "opacity 0.18s cubic-bezier(0.4,0,0.2,1), transform 0.18s cubic-bezier(0.4,0,0.2,1)",
-                }}
-              >
-                {LANGS.map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => onSetLang(l as Lang)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      padding: "9px 16px",
-                      background: l === lang ? "rgba(0,102,255,0.08)" : "none",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: l === lang ? 700 : 400,
-                      color: l === lang ? "#0066ff" : "#333",
-                      whiteSpace: "nowrap",
-                      textAlign: "left",
-                    }}
-                  >
-                    <span style={{ fontSize: "18px" }}>{LANG_LABELS[l]}</span>
-                    <span>
-                      {l === "ko"
-                        ? "한국어"
-                        : l === "en"
-                          ? "English"
-                          : l === "zh"
-                            ? "中文"
-                            : l === "ja"
-                              ? "日本語"
-                              : "Tiếng Việt"}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        {/* 언어 선택 버튼 (드롭다운은 index.tsx에서 fixed 렌더) */}
+        <button
+          ref={langBtnRef}
+          onClick={() => langMenuOpen ? onCloseLangMenu() : onOpenLangMenu()}
+          title="언어 선택 / Language"
+          style={{
+            fontSize: "20px",
+            lineHeight: 1,
+            padding: "7px 10px",
+            height: "40px",
+            background: "rgba(255,255,255,0.85)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            border: "1px solid rgba(255,255,255,0.6)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+            borderRadius: "14px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            flexShrink: 0,
+          }}
+        >
+          {LANG_LABELS[lang]}
+        </button>
       </div>
-
 
       {/* 힌트 스낵바 */}
       {showHint1 && (

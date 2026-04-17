@@ -1,6 +1,6 @@
 import { useLang } from "../../../LangContext";
 import { t, CAT_KEY_MAP, TAG_KEY_MAP } from "../../../i18n";
-import type { Restaurant } from "../../../data2";
+import type { Restaurant } from "../../../types/restaurant";
 import { useVirtualScroll } from "../hooks/useVirtualScroll";
 
 type Props = {

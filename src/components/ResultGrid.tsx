@@ -1,4 +1,4 @@
-import type { Restaurant } from "../data";
+import type { Restaurant } from "../types/restaurant";
 import { Card } from "./Card";
 
 interface ResultGridProps {

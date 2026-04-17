@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { restaurants } from "../../../data2";
-import type { Restaurant } from "../../../data2";
+import type { Restaurant } from "../../../types/restaurant";
 import type { MarkerModeKey, MarkerModes } from "../../NaverMap";
 import { applyTagFilter, applyPriceFilter } from "../utils";
 

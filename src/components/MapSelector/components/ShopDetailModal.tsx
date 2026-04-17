@@ -1,6 +1,6 @@
 import { useLang } from "../../../LangContext";
 import { t, CAT_KEY_MAP, TAG_KEY_MAP } from "../../../i18n";
-import type { Restaurant } from "../../../data2";
+import type { Restaurant } from "../../../types/restaurant";
 
 type Props = {
   restaurant: Restaurant;
@@ -10,7 +10,8 @@ type Props = {
   modalScrollRef: React.RefObject<HTMLDivElement | null>;
   onClose: () => void;
   onModalScroll: () => void;
-  onDragStart: (clientX: number, clientY: number) => void;
+  onDragStart: (clientX: number, clientY: number, initialOffsetY?: number) => void;
+  onScrollAreaTouchStart: (e: React.TouchEvent) => void;
   onCopyToast: (text: string, label: string) => void;
 };
 
@@ -23,6 +24,7 @@ export default function ShopDetailModal({
   onClose,
   onModalScroll,
   onDragStart,
+  onScrollAreaTouchStart,
   onCopyToast,
 }: Props) {
   const { lang } = useLang();
@@ -50,9 +52,9 @@ export default function ShopDetailModal({
       <div
         onClick={onClose}
         style={{
-          position: "absolute",
+          position: "fixed",
           inset: 0,
-          zIndex: 200,
+          zIndex: 10000,
           background: "rgba(0,0,0,0.35)",
           animation: shopModalClosing
             ? "overlayFadeOut 0.23s ease forwards"
@@ -60,81 +62,110 @@ export default function ShopDetailModal({
         }}
       />
 
-      {/* 모달 패널 */}
+      {/* 바텀시트 패널 */}
       <div
         ref={shopModalRef}
         style={{
-          position: "absolute",
-          bottom: "calc(56px + 12px)",
-          left: "12px",
-          right: "12px",
-          zIndex: 201,
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10001,
           height: "70vh",
           display: "flex",
           flexDirection: "column",
           background: "#ffffff",
-          borderRadius: "24px",
-          boxShadow: "0 -4px 24px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.08)",
-          overflow: "hidden",
+          borderRadius: "20px 20px 0 0",
+          boxShadow: "0 -4px 24px rgba(0,0,0,0.13)",
           willChange: "transform",
           animation:
             "shopModalSlideUp 0.32s cubic-bezier(0.32,0.72,0,1) forwards",
         }}
       >
-        {/* 드래그 핸들 */}
+        {/* 드래그 영역: 핸들바 + 헤더 전체 */}
         <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            padding: "10px 0 4px",
-            cursor: "grab",
-            flexShrink: 0,
-            touchAction: "none",
-          }}
+          style={{ flexShrink: 0, cursor: "grab", borderBottom: "1px solid #eee", borderRadius: "20px 20px 0 0", background: "#ffffff", userSelect: "none", WebkitUserSelect: "none" }}
           onMouseDown={(e) => onDragStart(e.clientX, e.clientY)}
-          onTouchStart={(e) =>
-            onDragStart(e.touches[0].clientX, e.touches[0].clientY)
-          }
+          onTouchStart={(e) => onDragStart(e.touches[0].clientX, e.touches[0].clientY)}
         >
-          <div
-            style={{
-              width: "36px",
-              height: "4px",
-              borderRadius: "999px",
-              background: "#d1d5db",
-            }}
-          />
-        </div>
+          {/* 핸들바 */}
+          <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 4px" }}>
+            <div style={{ width: "36px", height: "4px", borderRadius: "999px", background: "#d1d5db" }} />
+          </div>
 
-        {/* 상단 고정 헤더 */}
-        <div
-          style={{
-            padding: "8px 20px 12px 20px",
-            display: "flex",
-            alignItems: "stretch",
-            gap: "8px",
-            borderBottom: "1px solid #eee",
-          }}
-        >
-          <div style={{ flex: 1 }}>
+          {/* 헤더 컨텐츠 */}
+          <div style={{ padding: "4px 20px 12px 20px", display: "flex", flexDirection: "column", gap: "8px" }}>
+          {/* 식당 이름 + 닫기 */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  background: "#f5f5f5",
+                  borderRadius: "12px",
+                  padding: "0 14px",
+                  height: "40px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <div style={{ fontSize: "16px", fontWeight: 800, color: "#111" }}>
+                  {restaurant.name}
+                </div>
+                <button
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onClick={() => onCopyToast(restaurant.name, restaurant.name)}
+                  style={{
+                    flexShrink: 0,
+                    background: "#e0e0e0",
+                    border: "none",
+                    borderRadius: "8px",
+                    padding: "5px 10px",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    color: "#444",
+                    cursor: "pointer",
+                  }}
+                >
+                  {T.copy}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 카테고리 + 특성 칩 */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+            <span style={tagStyle}>{translateLabel(restaurant.category)}</span>
+            {restaurant.solo && <span style={tagStyle}>{T.tagSoloLabel}</span>}
+            {restaurant.filters.isCheap && <span style={tagStyle}>{T.tagCheapLabel}</span>}
+            {restaurant.filters.isHighProtein && <span style={tagStyle}>{T.tagProteinLabel}</span>}
+            {restaurant.filters.isHealthy && <span style={tagStyle}>{T.tagHealthyLabel}</span>}
+          </div>
+
+          {/* 주소 + 네이버지도 버튼 (좌우 배치) */}
+          <div style={{ display: "flex", gap: "8px", alignItems: "stretch" }}>
             <div
               style={{
+                flex: 1,
                 background: "#f5f5f5",
-                borderRadius: "12px",
-                padding: "0 14px",
-                height: "40px",
+                borderRadius: "10px",
+                padding: "8px 12px",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
                 gap: "8px",
-                marginBottom: "6px",
               }}
             >
-              <div style={{ fontSize: "16px", fontWeight: 800, color: "#111" }}>
-                {restaurant.name}
+              <div style={{ fontSize: "12px", color: "#555", lineHeight: 1.5 }}>
+                <div style={{ fontWeight: 600, color: "#333", marginBottom: "1px" }}>{T.address}</div>
+                <div>{restaurant.roadAddress}</div>
               </div>
               <button
-                onClick={() => onCopyToast(restaurant.name, restaurant.name)}
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                onClick={() => onCopyToast(restaurant.roadAddress, restaurant.roadAddress)}
                 style={{
                   flexShrink: 0,
                   background: "#e0e0e0",
@@ -145,85 +176,52 @@ export default function ShopDetailModal({
                   fontWeight: 600,
                   color: "#444",
                   cursor: "pointer",
+                  touchAction: "manipulation",
                 }}
               >
                 {T.copy}
               </button>
             </div>
-            <span
+            <a
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              href={`https://map.naver.com/p/entry/place/${restaurant.naverMapCode}`}
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
-                background: "#e0e0e0",
-                color: "#444",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "0 12px",
+                background: "#03C75A",
+                color: "white",
+                borderRadius: "10px",
                 fontSize: "11px",
-                fontWeight: 600,
-                borderRadius: "8px",
-                padding: "2px 8px",
+                fontWeight: 700,
+                textDecoration: "none",
+                minWidth: "56px",
               }}
             >
-              {translateLabel(restaurant.category)}
-            </span>
+              {T.naverMap}
+            </a>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: "#f5f5f5",
-              border: "none",
-              borderRadius: "12px",
-              width: "40px",
-              height: "40px",
-              cursor: "pointer",
-              color: "#555",
-              fontSize: "16px",
-              flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              alignSelf: "flex-start",
-            }}
-          >
-            ✕
-          </button>
+          </div>
         </div>
 
         {/* 스크롤 영역 */}
         <div
           ref={modalScrollRef}
           onScroll={onModalScroll}
+          onTouchStart={onScrollAreaTouchStart}
           style={{
             overflowY: "auto",
-            padding: "16px 20px 48px 20px",
+            padding: "16px 20px 16px 20px",
             flex: 1,
             minHeight: 0,
+            touchAction: "pan-y",
           }}
         >
-          {/* 필터 태그 */}
-          {(restaurant.filters.isCheap ||
-            restaurant.filters.isHighProtein ||
-            restaurant.filters.isHealthy ||
-            restaurant.solo) && (
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "5px",
-                marginBottom: "12px",
-              }}
-            >
-              {restaurant.solo && (
-                <span style={tagStyle}>{T.tagSoloLabel}</span>
-              )}
-              {restaurant.filters.isCheap && (
-                <span style={tagStyle}>{T.tagCheapLabel}</span>
-              )}
-              {restaurant.filters.isHighProtein && (
-                <span style={tagStyle}>{T.tagProteinLabel}</span>
-              )}
-              {restaurant.filters.isHealthy && (
-                <span style={tagStyle}>{T.tagHealthyLabel}</span>
-              )}
-            </div>
-          )}
-
           {/* 최저가 */}
           {restaurant.minPrice != null && (
             <div
@@ -253,7 +251,7 @@ export default function ShopDetailModal({
 
           {/* 메뉴 목록 */}
           {restaurant.menus.length > 0 && (
-            <div style={{ marginBottom: "12px" }}>
+            <div style={{ marginBottom: "0" }}>
               <div
                 style={{
                   fontSize: "12px",
@@ -356,119 +354,41 @@ export default function ShopDetailModal({
               </div>
             </div>
           )}
+
         </div>
 
-        {/* 하단 고정 영역 */}
-        <div style={{ padding: "12px 24px 24px 24px", position: "relative" }}>
-          {/* 스크롤 페이드 + 힌트 */}
+        {/* 스크롤 페이드 힌트 - 바텀시트 하단에 절대 위치 */}
+        {!isScrolledToBottom && (
           <div
             style={{
               position: "absolute",
-              top: "-80px",
+              bottom: 0,
               left: 0,
               right: 0,
-              height: "80px",
-              background:
-                "linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1))",
-              pointerEvents: "none",
+              height: "48px",
+              background: "linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1))",
               display: "flex",
               alignItems: "flex-end",
               justifyContent: "center",
               paddingBottom: "6px",
+              pointerEvents: "none",
+              zIndex: 1,
             }}
           >
-            {!isScrolledToBottom && (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "2px",
-                  animation: "scrollBounce 1.2s ease-in-out infinite",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    color: "#888",
-                  }}
-                >
-                  {T.moreMenu}
-                </span>
-                <span style={{ fontSize: "14px", opacity: 0.6 }}>↓</span>
-              </div>
-            )}
-          </div>
-
-          {/* 주소 */}
-          <div
-            style={{
-              background: "#f5f5f5",
-              borderRadius: "12px",
-              padding: "10px 14px",
-              fontSize: "12px",
-              color: "#555",
-              lineHeight: 1.6,
-              marginBottom: "10px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  fontWeight: 600,
-                  color: "#333",
-                  marginBottom: "2px",
-                }}
-              >
-                {T.address}
-              </div>
-              <div>{restaurant.roadAddress}</div>
-            </div>
-            <button
-              onClick={() =>
-                onCopyToast(restaurant.roadAddress, restaurant.roadAddress)
-              }
+            <div
               style={{
-                flexShrink: 0,
-                background: "#e0e0e0",
-                border: "none",
-                borderRadius: "8px",
-                padding: "5px 10px",
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#444",
-                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "1px",
+                animation: "scrollBounce 1.2s ease-in-out infinite",
               }}
             >
-              {T.copy}
-            </button>
+              <span style={{ fontSize: "10px", fontWeight: 600, color: "#888" }}>{T.moreMenu}</span>
+              <span style={{ fontSize: "13px", opacity: 0.6 }}>↓</span>
+            </div>
           </div>
-
-          {/* 네이버지도 버튼 */}
-          <a
-            href={`https://map.naver.com/p/entry/place/${restaurant.naverMapCode}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "block",
-              textAlign: "center",
-              padding: "13px 0",
-              background: "#03C75A",
-              color: "white",
-              borderRadius: "12px",
-              fontSize: "14px",
-              fontWeight: 700,
-              textDecoration: "none",
-            }}
-          >
-            {T.naverMap}
-          </a>
-        </div>
+        )}
       </div>
     </>
   );

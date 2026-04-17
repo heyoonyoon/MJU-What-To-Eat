@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import type { Restaurant } from "../../../data2";
+import type { Restaurant } from "../../../types/restaurant";
 import ShopCardList from "./ShopCardList";
 import MenuCardList from "./MenuCardList";
 

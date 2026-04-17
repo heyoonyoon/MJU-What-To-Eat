@@ -1,4 +1,4 @@
-import type { Restaurant } from "../data";
+import type { Restaurant } from "../types/restaurant";
 import { CAT_COLORS } from "./constants";
 import { useLang } from "../LangContext";
 import { t, CAT_KEY_MAP } from "../i18n";
