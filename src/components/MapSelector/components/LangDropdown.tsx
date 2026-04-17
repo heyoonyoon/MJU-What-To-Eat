@@ -18,7 +18,10 @@ export default function LangDropdown({
 }: LangDropdownProps) {
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 9998 }} />
+      <div
+        onClick={onClose}
+        style={{ position: "fixed", inset: 0, zIndex: 9998 }}
+      />
       <div
         style={{
           position: "fixed",

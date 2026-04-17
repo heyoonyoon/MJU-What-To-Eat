@@ -14,10 +14,10 @@ interface GlassPanelProps {
 // 글래스모피즘 토큰 — 여기만 수정하면 프로젝트 전체에 반영됩니다.
 export const GLASS = {
   light: {
-    background: "rgba(255,255,255,0.88)",
-    border: "1px solid rgba(255,255,255,0.6)",
-    backdropFilter: "blur(14px)",
-    boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
+    background: "linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.25) 100%)",
+    border: "1px solid rgba(255,255,255,0.45)",
+    backdropFilter: "blur(28px) saturate(180%) brightness(1.04)",
+    boxShadow: "0 8px 32px rgba(0,0,0,0.10)",
   },
   dark: {
     background: "rgba(0,0,0,0.45)",
