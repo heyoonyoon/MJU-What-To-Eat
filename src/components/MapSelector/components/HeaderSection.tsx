@@ -126,7 +126,7 @@ export default function HeaderSection({
         {/* 언어 선택 버튼 (드롭다운은 index.tsx에서 fixed 렌더) */}
         <button
           ref={langBtnRef}
-          onClick={() => langMenuOpen ? onCloseLangMenu() : onOpenLangMenu()}
+          onClick={() => (langMenuOpen ? onCloseLangMenu() : onOpenLangMenu())}
           title="언어 선택 / Language"
           style={{
             fontSize: "20px",

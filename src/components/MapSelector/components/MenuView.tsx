@@ -11,6 +11,7 @@ type Props = {
   scrollPaddingBottom: number;
   sortOrder?: "default" | "priceLow" | "priceHigh";
   isRolled?: boolean;
+  skipAnimation?: boolean;
   onScrollRefReady: (node: HTMLDivElement | null) => void;
   onRestaurantClick: (r: Restaurant) => void;
 };
@@ -23,6 +24,7 @@ export default function MenuView({
   scrollPaddingBottom,
   sortOrder,
   isRolled,
+  skipAnimation,
   onScrollRefReady,
   onRestaurantClick,
 }: Props) {
@@ -65,7 +67,7 @@ export default function MenuView({
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        animation: "menuViewFadeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
+        animation: skipAnimation ? "none" : "menuViewFadeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
       }}
     >
       {/* 스크롤 컨테이너 */}

@@ -84,15 +84,11 @@ export default function MapAnimations() {
         pointer-events: none;
       }
       .header-backdrop.is-scrolled {
-        background: linear-gradient(
-          160deg,
-          rgba(255, 255, 255, 0.6) 0%,
-          rgba(255, 255, 255, 0.2) 100%
-        );
-        backdrop-filter: blur(30px) saturate(200%) brightness(1.05);
-        -webkit-backdrop-filter: blur(30px) saturate(200%) brightness(1.05);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        background: linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.25) 100%);
+        backdrop-filter: blur(28px) saturate(180%) brightness(1.04);
+        -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.04);
+        border: 1px solid rgba(255,255,255,0.45);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.10);
       }
     `}</style>
   );

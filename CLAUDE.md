@@ -1,3 +1,12 @@
+## 🚨 COMPONENT CREATION RULES — NO EXCEPTIONS
+
+**Every new UI element (chip, modal, card, button group, etc.) MUST be created as a separate file.**
+
+1. **JSX → `components/` folder**: Create `components/MyComponent.tsx`. Never inline new components into existing files.
+2. **Logic/state → `hooks/` folder**: Create `hooks/useMyFeature.ts`. Never put hook logic directly in a component file.
+3. **Even small components require their own file.** A "simple" chip, badge, or tooltip is NOT an excuse to inline.
+4. **This applies at creation time**, not just when files get too long. Do not wait until 200 lines to extract.
+
 **MANDATORY: Always split components by feature unit. Never keep logic, JSX, and state together in one file if it exceeds 200 lines. Extract hooks to hooks/, UI blocks to components/. This rule has NO exceptions.**
 
 Core Constraints
@@ -41,11 +50,13 @@ import GlassPanel from "../GlassPanel";
 ```
 
 **3가지 톤 (GlassTone)**:
+
 - `"light"` — 흰 반투명 패널 (기본값). 검색바·버튼·카드 등 일반 UI.
-- `"dark"`  — 검정 반투명. 힌트 스낵바·토스트 등 알림성 UI.
-- `"blue"`  — 파란 반투명. 강조·활성 상태.
+- `"dark"` — 검정 반투명. 힌트 스낵바·토스트 등 알림성 UI.
+- `"blue"` — 파란 반투명. 강조·활성 상태.
 
 **사용 예시**:
+
 ```tsx
 // 인라인 style spread (버튼, 기존 div 유지)
 style={{ ...glassStyle("light"), borderRadius: 16 }}
@@ -55,6 +66,7 @@ style={{ ...glassStyle("light"), borderRadius: 16 }}
 ```
 
 **현재 적용된 UI**:
+
 - 상단 검색바 / 언어 버튼 (`HeaderSection.tsx`)
 - 마커 모드 아일랜드 (`index.tsx`)
 - 하단 뽑기 버튼 바 (`index.tsx`)
