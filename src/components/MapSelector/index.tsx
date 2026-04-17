@@ -139,10 +139,18 @@ export default function MapSelector() {
     requestAnimationFrame(() => setSortDropdownVisible(true));
   }, []);
 
+  const sortClosingRef = useRef(false);
+
   const closeSortDropdown = useCallback(() => {
+    sortClosingRef.current = true;
     setSortDropdownVisible(false);
-    setTimeout(() => setSortDropdownOpen(false), 180);
+    setTimeout(() => { setSortDropdownOpen(false); sortClosingRef.current = false; }, 180);
   }, []);
+
+  const openSortDropdownSafe = useCallback(() => {
+    if (sortClosingRef.current) return;
+    openSortDropdown();
+  }, [openSortDropdown]);
 
   const openFilterSheet = useCallback(() => {
     setFilterSheetClosing(false);
@@ -879,7 +887,7 @@ export default function MapSelector() {
           sortBtnRef={sortBtnRef}
           filterSheetOpen={filterSheetOpen}
           onSortChange={setSortOrder}
-          onOpenSortDropdown={openSortDropdown}
+          onOpenSortDropdown={openSortDropdownSafe}
           onCloseSortDropdown={closeSortDropdown}
           onOpenFilterSheet={openFilterSheet}
           onToggleFilter={toggleFilter}

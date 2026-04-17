@@ -22,7 +22,7 @@ export default function SortDropdown({ sortOrder, pos, visible, onSortChange, on
   return (
     <>
       <div
-        onClick={onClose}
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
         style={{ position: "fixed", inset: 0, zIndex: 9998, pointerEvents: "auto" }}
       />
       <div
