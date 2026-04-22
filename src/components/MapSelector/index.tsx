@@ -29,7 +29,11 @@ import TabFab from "./components/TabFab";
 import LangDropdown from "./components/LangDropdown";
 import ToastStack from "./components/ToastStack";
 
-export default function MapSelector() {
+type Props = {
+  onOpenCardMenu?: () => void;
+};
+
+export default function MapSelector({ onOpenCardMenu }: Props) {
   const { lang, setLang } = useLang();
 
   const {
@@ -307,6 +311,37 @@ export default function MapSelector() {
           setActiveTab((v) => (v === "map" ? "menu" : "map"));
         }}
       />
+
+      {onOpenCardMenu && (
+        <button
+          onClick={onOpenCardMenu}
+          style={{
+            position: "absolute",
+            bottom: "76px",
+            right: "12px",
+            zIndex: 110,
+            width: "52px",
+            height: "52px",
+            borderRadius: "16px",
+            border: "none",
+            background: "rgba(255,255,255,0.72)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+            cursor: "pointer",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 2,
+            fontSize: "18px",
+          }}
+          aria-label="카드 메뉴판"
+        >
+          🃏
+          <span style={{ fontSize: "9px", fontWeight: 700, color: "#111" }}>카드</span>
+        </button>
+      )}
 
       <div
         style={{
