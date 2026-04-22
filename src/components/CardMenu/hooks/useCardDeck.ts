@@ -17,9 +17,13 @@ export function useCardDeck(cards: CardItem[]) {
   const reset = useCallback(() => setOffset(0), []);
 
   // 현재 스택 순서: offset부터 순환
-  const orderedCards = cards.length === 0
-    ? []
-    : Array.from({ length: cards.length }, (_, i) => cards[(offset + i) % cards.length]);
+  const orderedCards =
+    cards.length === 0
+      ? []
+      : Array.from(
+          { length: cards.length },
+          (_, i) => cards[(offset + i) % cards.length],
+        );
 
   return { orderedCards, offset, advance, reset };
 }

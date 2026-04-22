@@ -1,3 +1,9 @@
+## Supplemental Rules
+
+See **[RULES.md](./RULES.md)** for additional mandatory coding rules (arrow function components, one export per component file, no impure functions in hooks/render).
+
+---
+
 ## 🚨 COMPONENT CREATION RULES — NO EXCEPTIONS
 
 **Every new UI element (chip, modal, card, button group, etc.) MUST be created as a separate file.**
@@ -14,6 +20,7 @@ File Limits: Max 200 lines. Exceeding 500 lines REQUIRES splitting (hooks/compon
 No Prop Refs: Never pass ref as a prop. Use onXxxReady: (node: T | null) => void for parent-child DOM syncing.
 State Flow: No setState in useEffect. Derive state during render or use useMemo.
 Mandatory I18n: All UI text must use t[lang].key from src/i18n.ts.
+No Impure Functions in useMemo/render: Never call `Math.random()`, `Date.now()`, or any other impure function inside `useMemo`, `useCallback`, or render logic. React's purity rules forbid it and the ESLint plugin `react-hooks/purity` will error. Instead, run impure initialization at **module scope** (outside the hook) so it executes once at module load and is safe to reference from hooks as a stable value.
 
 Architecture & Conventions
 Context Layering & Efficiency (Tokens)
