@@ -69,4 +69,6 @@ export const zh = {
   sortPriceLow: "价格从低到高",
   sortPriceHigh: "价格从高到低",
   filterSheet: "筛选",
+  homeStartBtn: "搜索 {n} 家餐厅",
+  navCard: "卡片",
 };

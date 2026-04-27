@@ -69,4 +69,6 @@ export const ko = {
   sortPriceLow: "가격 낮은순",
   sortPriceHigh: "가격 높은순",
   filterSheet: "필터",
+  homeStartBtn: "{n}개 식당 검색하기",
+  navCard: "카드",
 };

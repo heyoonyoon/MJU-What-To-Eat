@@ -1,3 +1,9 @@
+## Supplemental Rules
+
+See ./claude/rules/code-style.md for additional mandatory coding rules (arrow function components, one export per component file, no impure functions in hooks/render).
+
+---
+
 ## 🚨 COMPONENT CREATION RULES — NO EXCEPTIONS
 
 **Every new UI element (chip, modal, card, button group, etc.) MUST be created as a separate file.**
@@ -14,6 +20,7 @@ File Limits: Max 200 lines. Exceeding 500 lines REQUIRES splitting (hooks/compon
 No Prop Refs: Never pass ref as a prop. Use onXxxReady: (node: T | null) => void for parent-child DOM syncing.
 State Flow: No setState in useEffect. Derive state during render or use useMemo.
 Mandatory I18n: All UI text must use t[lang].key from src/i18n.ts.
+No Impure Functions in useMemo/render: Never call `Math.random()`, `Date.now()`, or any other impure function inside `useMemo`, `useCallback`, or render logic. React's purity rules forbid it and the ESLint plugin `react-hooks/purity` will error. Instead, run impure initialization at **module scope** (outside the hook) so it executes once at module load and is safe to reference from hooks as a stable value.
 
 Architecture & Conventions
 Context Layering & Efficiency (Tokens)
@@ -64,10 +71,3 @@ style={{ ...glassStyle("light"), borderRadius: 16 }}
 // 래퍼 컴포넌트
 <GlassPanel tone="light" borderRadius={16}>...</GlassPanel>
 ```
-
-**현재 적용된 UI**:
-
-- 상단 검색바 / 언어 버튼 (`HeaderSection.tsx`)
-- 마커 모드 아일랜드 (`index.tsx`)
-- 하단 뽑기 버튼 바 (`index.tsx`)
-- 탭 전환 FAB 버튼 (`index.tsx`)
