@@ -1,6 +1,6 @@
 import { useLang } from "../../../LangContext";
 import { t } from "../../../i18n";
-import type { SortOrder } from "../hooks/useFilterState";
+import type { SortOrder } from "../../../store/useSearchStore";
 
 const SORT_ORDERS: SortOrder[] = ["default", "priceLow", "priceHigh"];
 

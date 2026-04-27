@@ -1,6 +1,6 @@
 ## Supplemental Rules
 
-See **[RULES.md](./RULES.md)** for additional mandatory coding rules (arrow function components, one export per component file, no impure functions in hooks/render).
+See ./claude/rules/code-style.md for additional mandatory coding rules (arrow function components, one export per component file, no impure functions in hooks/render).
 
 ---
 
@@ -71,10 +71,3 @@ style={{ ...glassStyle("light"), borderRadius: 16 }}
 // 래퍼 컴포넌트
 <GlassPanel tone="light" borderRadius={16}>...</GlassPanel>
 ```
-
-**현재 적용된 UI**:
-
-- 상단 검색바 / 언어 버튼 (`HeaderSection.tsx`)
-- 마커 모드 아일랜드 (`index.tsx`)
-- 하단 뽑기 버튼 바 (`index.tsx`)
-- 탭 전환 FAB 버튼 (`index.tsx`)

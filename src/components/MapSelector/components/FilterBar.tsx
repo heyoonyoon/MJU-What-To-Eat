@@ -1,6 +1,6 @@
 import { useLang } from "../../../LangContext";
 import { t, CAT_KEY_MAP, TAG_KEY_MAP } from "../../../i18n";
-import type { SortOrder } from "../hooks/useFilterState";
+import type { SortOrder } from "../../../store/useSearchStore";
 import SortDropdown from "./SortDropdown";
 import SearchChip from "./SearchChip";
 

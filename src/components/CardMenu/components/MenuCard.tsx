@@ -23,6 +23,8 @@ type Props = {
   zIndex: number;
   cursor?: CSSProperties["cursor"];
   transformOrigin?: string;
+  onReady?: (node: HTMLDivElement | null) => void;
+  opacity?: number;
 };
 
 const MenuCard = ({
@@ -33,6 +35,8 @@ const MenuCard = ({
   zIndex,
   cursor,
   transformOrigin,
+  onReady,
+  opacity,
 }: Props) => {
   const { restaurant: r, menu: m } = item;
   const menuName = m.name[lang] || m.name.ko;
@@ -40,6 +44,7 @@ const MenuCard = ({
 
   return (
     <div
+      ref={onReady}
       style={{
         position: "absolute",
         width: "100%",
@@ -54,6 +59,7 @@ const MenuCard = ({
         userSelect: "none",
         cursor: cursor ?? "default",
         overflow: "hidden",
+        opacity: opacity ?? 1,
       }}
     >
       <div

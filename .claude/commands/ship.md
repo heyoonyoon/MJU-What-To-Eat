@@ -9,3 +9,5 @@ Steps:
 5. Commit with the generated message.
 6. Push to the current branch with `git push`.
 7. Report: commit message used, files changed, push result.
+8. Create a Pull Request to main branch using `gh pr create --base main --fill`.
+9. Report: commit message used, files changed, push result, PR URL.

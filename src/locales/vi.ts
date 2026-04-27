@@ -69,4 +69,6 @@ export const vi = {
   sortPriceLow: "Giá thấp đến cao",
   sortPriceHigh: "Giá cao đến thấp",
   filterSheet: "Bộ lọc",
+  homeStartBtn: "Tìm {n} nhà hàng",
+  navCard: "Thẻ",
 };

@@ -69,4 +69,6 @@ export const en = {
   sortPriceLow: "Price: Low to High",
   sortPriceHigh: "Price: High to Low",
   filterSheet: "Filter",
+  homeStartBtn: "Search {n} restaurants",
+  navCard: "Cards",
 };

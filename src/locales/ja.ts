@@ -69,4 +69,6 @@ export const ja = {
   sortPriceLow: "価格が安い順",
   sortPriceHigh: "価格が高い順",
   filterSheet: "フィルター",
+  homeStartBtn: "{n}件のレストランを検索",
+  navCard: "カード",
 };

@@ -4,11 +4,10 @@ import { useLang } from "../../LangContext";
 import type { Lang } from "../../i18n";
 import type { Restaurant } from "../../types/restaurant";
 
-import { useFilterState } from "./hooks/useFilterState";
+import { useSearchStore } from "../../store/useSearchStore";
 import { useBottomSheet } from "./hooks/useBottomSheet";
 import { useSearchModal } from "./hooks/useSearchModal";
 import { useToast } from "./hooks/useToast";
-import { useRollState } from "./hooks/useRollState";
 import { useMarkerMode } from "./hooks/useMarkerMode";
 import { useLangMenu } from "./hooks/useLangMenu";
 import { useCopyToast } from "./hooks/useCopyToast";
@@ -21,19 +20,23 @@ import FilterSheet from "./components/FilterSheet";
 import MenuView from "./components/MenuView";
 import SearchModal from "./components/SearchModal";
 import ShopDetailModal from "./components/ShopDetailModal";
-import Confetti from "./components/Confetti";
 import MapAnimations from "./components/MapAnimations";
 import MarkerIsland from "./components/MarkerIsland";
-import RollBar from "./components/RollBar";
 import TabFab from "./components/TabFab";
 import LangDropdown from "./components/LangDropdown";
 import ToastStack from "./components/ToastStack";
+import BottomTabBar, { type BottomTab } from "../BottomTabBar";
+
+import type { MarkerModeKey, MarkerModes } from "../NaverMap";
+import { restaurants } from "../../data2";
+import { applyTagFilter, applyPriceFilter } from "./utils";
 
 type Props = {
-  onOpenCardMenu?: () => void;
+  initialTab?: "map" | "menu";
+  onTabChange: (tab: BottomTab) => void;
 };
 
-export default function MapSelector({ onOpenCardMenu }: Props) {
+export default function MapSelector({ initialTab = "map", onTabChange }: Props) {
   const { lang, setLang } = useLang();
 
   const {
@@ -44,14 +47,23 @@ export default function MapSelector({ onOpenCardMenu }: Props) {
     setSearchQuery,
     appliedTarget,
     filteredList,
-    sortedList,
     filteredMenuIds,
     toggleFilter,
     applyFilterSheet,
-    applySearch,
     sortOrder,
     setSortOrder,
-  } = useFilterState();
+  } = useSearchStore();
+
+  // sortedList — store는 정렬 없이 filteredList를 그대로 줌, 여기서 정렬
+  const sortedList = (() => {
+    if (sortOrder === "priceLow") {
+      return [...filteredList].sort((a, b) => (a.minPrice ?? Infinity) - (b.minPrice ?? Infinity));
+    }
+    if (sortOrder === "priceHigh") {
+      return [...filteredList].sort((a, b) => (b.minPrice ?? -Infinity) - (a.minPrice ?? -Infinity));
+    }
+    return filteredList;
+  })();
 
   const modalScrollRef = useRef<HTMLDivElement | null>(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
@@ -147,8 +159,8 @@ export default function MapSelector({ onOpenCardMenu }: Props) {
   } = useBottomSheet();
 
   const [focusTarget, setFocusTarget] = useState<Restaurant | null>(null);
-  const [activeTab, setActiveTab] = useState<"map" | "menu">("menu");
-  const isInitialMenuMount = useRef(true);
+  const [activeTab, setActiveTab] = useState<"map" | "menu">(initialTab);
+  const isInitialMenuMount = useRef(initialTab !== "menu");
   const [menuFilterBarHeight, setMenuFilterBarHeight] = useState(160);
   const [headerHeight, setHeaderHeight] = useState(70);
   const [showHint1, setShowHint1] = useState(false);
@@ -160,54 +172,68 @@ export default function MapSelector({ onOpenCardMenu }: Props) {
     sortedList,
   );
 
-  const {
-    rolledId,
-    rolledMenuKey,
-    confettiTrigger,
-    rolledRestaurant,
-    rolledMenuRestaurant,
-    rolledMenuIdSet,
-    handleRoll,
-    handleRollMenu,
-    handleUnroll,
-  } = useRollState({
-    filteredList,
-    filteredMenuIds,
-    setMarkerModes,
-    setFocusTarget,
-  });
-
   const handleClearPrice = () => {
     setMaxPrice(null);
   };
+
   const handleClearSearch = () => {
-    setSearchQuery("");
+    setSearchQuery("", "menu");
     setSearchInput("");
   };
 
   const handleApplySearch = (input: string, target: "name" | "menu") => {
-    const count = applySearch(input, target, setMarkerModes, setFocusTarget);
-    if (count > 0) {
-      closeSearchModal();
-      setMarkerIslandOpen(false);
-    } else showToast("검색 결과가 없습니다");
+    const q = input.trim().toLowerCase();
+    const menuQ = q && target === "menu" ? q : undefined;
+    const matched = q
+      ? restaurants.filter((r) => {
+          const typeOk = filters.type.length === 0 || filters.type.includes(r.type);
+          const catOk = filters.cat.includes("전체") || filters.cat.includes(r.category);
+          const zoneOk = filters.zone.length === 0 || filters.zone.includes(r.zone);
+          const tagsOk = applyTagFilter(r, filters.tags);
+          const priceOk = applyPriceFilter(r, maxPrice, menuQ);
+          if (!typeOk || !catOk || !zoneOk || !tagsOk || !priceOk) return false;
+          if (target === "name") return r.name.toLowerCase().includes(q);
+          return (r.menus || []).some((m) =>
+            Object.values(m.name).some((v) => v.toLowerCase().includes(q)),
+          );
+        })
+      : restaurants;
+
+    setSearchQuery(input, target);
+
+    if (matched.length === 0) {
+      showToast("검색 결과가 없습니다");
+      return;
+    }
+
+    const modeKey: MarkerModeKey = target === "menu" ? "menu" : "name";
+    setMarkerModes((prev: MarkerModes) => {
+      if (prev.has(modeKey)) return prev;
+      return new Set([...prev, modeKey]);
+    });
+    if (matched.length > 0) setFocusTarget(matched[0]);
+    closeSearchModal();
+    setMarkerIslandOpen(false);
   };
 
-  const displayList = rolledRestaurant
-    ? [rolledRestaurant]
-    : rolledMenuRestaurant
-      ? [rolledMenuRestaurant]
-      : filteredList;
-  const displayMenuIds = rolledRestaurant
-    ? null
-    : rolledMenuKey
-      ? rolledMenuIdSet
-      : filteredMenuIds;
-  const menuViewList = rolledRestaurant
-    ? [rolledRestaurant]
-    : rolledMenuRestaurant
-      ? [rolledMenuRestaurant]
-      : sortedList;
+  const displayList = filteredList;
+  const displayMenuIds = filteredMenuIds;
+  const menuViewList = sortedList;
+
+  // 탭바 클릭: 지도/메뉴 탭은 내부 전환, 카드는 상위로 위임
+  const handleBottomTabChange = (tab: BottomTab) => {
+    if (tab === "map") {
+      isInitialMenuMount.current = false;
+      setActiveTab("map");
+    } else if (tab === "menu") {
+      isInitialMenuMount.current = false;
+      setActiveTab("menu");
+    } else {
+      onTabChange(tab);
+    }
+  };
+
+  const currentBottomTab: BottomTab = activeTab === "map" ? "map" : "menu";
 
   return (
     <div style={{ position: "fixed", inset: 0 }}>
@@ -283,26 +309,18 @@ export default function MapSelector({ onOpenCardMenu }: Props) {
           <MenuView
             filteredList={menuViewList}
             filteredMenuIds={displayMenuIds}
-            isRolled={!!rolledRestaurant || !!rolledMenuRestaurant}
+            isRolled={false}
             sortOrder={sortOrder}
             skipAnimation={isInitialMenuMount.current}
             menuFilterBarHeight={menuFilterBarHeight + 8}
             scrollPaddingTop={menuFilterBarHeight + 8}
-            scrollPaddingBottom={80}
+            scrollPaddingBottom={80 + 56}
             onScrollRefReady={onScrollRefReady}
             onRestaurantClick={openShopModal}
           />
         </div>
       )}
 
-      <RollBar
-        lang={lang}
-        filteredCount={filteredList.length}
-        isUnrollable={rolledId !== null || rolledMenuKey !== null}
-        onRoll={handleRoll}
-        onRollMenu={handleRollMenu}
-        onUnroll={handleUnroll}
-      />
       <TabFab
         lang={lang}
         activeTab={activeTab}
@@ -311,37 +329,6 @@ export default function MapSelector({ onOpenCardMenu }: Props) {
           setActiveTab((v) => (v === "map" ? "menu" : "map"));
         }}
       />
-
-      {onOpenCardMenu && (
-        <button
-          onClick={onOpenCardMenu}
-          style={{
-            position: "absolute",
-            bottom: "76px",
-            right: "12px",
-            zIndex: 110,
-            width: "52px",
-            height: "52px",
-            borderRadius: "16px",
-            border: "none",
-            background: "rgba(255,255,255,0.72)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-            cursor: "pointer",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 2,
-            fontSize: "18px",
-          }}
-          aria-label="카드 메뉴판"
-        >
-          🃏
-          <span style={{ fontSize: "9px", fontWeight: 700, color: "#111" }}>카드</span>
-        </button>
-      )}
 
       <div
         style={{
@@ -467,7 +454,8 @@ export default function MapSelector({ onOpenCardMenu }: Props) {
         />
       )}
 
-      <Confetti trigger={confettiTrigger} />
+
+      <BottomTabBar activeTab={currentBottomTab} onTabChange={handleBottomTabChange} />
     </div>
   );
 }
