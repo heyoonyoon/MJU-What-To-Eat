@@ -131,7 +131,7 @@ const MenuCard = ({
               marginTop: 2,
             }}
           >
-            {r.zone}구역 · {r.type}
+            {r.type}
           </div>
           {m.tags && m.tags.length > 0 && (
             <div

@@ -9,9 +9,12 @@ export type CardItem = {
 export function useCardDeck(cards: CardItem[]) {
   const [offset, setOffset] = useState(0);
 
-  // 맨 앞 카드를 맨 뒤로 보냄 (순환)
   const advance = useCallback(() => {
     setOffset((o) => (o + 1) % cards.length);
+  }, [cards.length]);
+
+  const goBack = useCallback(() => {
+    setOffset((o) => (o - 1 + cards.length) % cards.length);
   }, [cards.length]);
 
   const reset = useCallback(() => setOffset(0), []);
@@ -25,5 +28,5 @@ export function useCardDeck(cards: CardItem[]) {
           (_, i) => cards[(offset + i) % cards.length],
         );
 
-  return { orderedCards, offset, advance, reset };
+  return { orderedCards, offset, advance, goBack, reset };
 }

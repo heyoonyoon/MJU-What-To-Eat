@@ -8,16 +8,19 @@ import { useSortDropdown } from "../MapSelector/hooks/useSortDropdown";
 import { useSearchModal } from "../MapSelector/hooks/useSearchModal";
 import { useBottomSheet } from "../MapSelector/hooks/useBottomSheet";
 import { useToast } from "../MapSelector/hooks/useToast";
+import { useCopyToast } from "../MapSelector/hooks/useCopyToast";
 import { applyTagFilter, applyPriceFilter } from "../MapSelector/utils";
 import CardDeck, { type CardDeckHandle } from "./components/CardDeck";
-import SwipeActionButtons from "./components/SwipeActionButtons";
 import BottomTabBar, { type BottomTab } from "../BottomTabBar";
 import HeaderSection from "../MapSelector/components/HeaderSection";
 import FilterBar from "../MapSelector/components/FilterBar";
 import FilterSheet from "../MapSelector/components/FilterSheet";
 import SearchModal from "../MapSelector/components/SearchModal";
+import ShopDetailModal from "../MapSelector/components/ShopDetailModal";
+import MapAnimations from "../MapSelector/components/MapAnimations";
 import LangDropdown from "../MapSelector/components/LangDropdown";
 import ToastStack from "../MapSelector/components/ToastStack";
+import type { Restaurant } from "../../types/restaurant";
 import type { Lang } from "../../i18n";
 import { restaurants } from "../../data2";
 import type { MarkerModeKey, MarkerModes } from "../NaverMap";
@@ -42,8 +45,45 @@ const CardMenu = ({ onTabChange }: Props) => {
   } = useSearchStore();
 
   const cards = useFilteredCardItems();
-  const { orderedCards, advance } = useCardDeck(cards);
+  const { orderedCards, offset, advance, goBack } = useCardDeck(cards);
   const deckRef = useRef<CardDeckHandle>(null);
+
+  // 가게 상세 모달
+  const modalScrollRef = useRef<HTMLDivElement | null>(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const scrollHintEnabledRef = useRef(false);
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
+  const {
+    isOpen: shopSheetOpen,
+    open: _openShopSheet,
+    close: closeShopModal,
+    onSheetReady: shopSheetReady,
+    onOverlayReady: shopOverlayReady,
+    onDragStart: shopDragStart,
+    onScrollAreaTouchStart,
+  } = useBottomSheet({ closeDuration: 260, scrollRef: modalScrollRef });
+
+  const openShopModal = useCallback((r: Restaurant) => {
+    setSelectedRestaurant(r);
+    scrollHintEnabledRef.current = false;
+    setIsScrolledToBottom(false);
+    _openShopSheet();
+    setTimeout(() => {
+      const el = modalScrollRef.current;
+      if (!el) return;
+      const enabled = el.scrollHeight - el.clientHeight >= 120;
+      scrollHintEnabledRef.current = enabled;
+      setIsScrolledToBottom(!enabled);
+    }, 0);
+  }, [_openShopSheet]);
+
+  const handleModalScroll = useCallback(() => {
+    if (!scrollHintEnabledRef.current) return;
+    const el = modalScrollRef.current;
+    if (!el) return;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 8;
+    setIsScrolledToBottom(atBottom);
+  }, []);
 
   const { langMenuOpen, langMenuVisible, langMenuPos, langBtnRef, openLangMenu, closeLangMenu } = useLangMenu();
   const { sortDropdownOpen, sortDropdownVisible, sortDropdownPos, sortBtnRef, openSortDropdownSafe, closeSortDropdown } = useSortDropdown();
@@ -72,6 +112,7 @@ const CardMenu = ({ onTabChange }: Props) => {
     onDragStart: filterSheetDragStart,
   } = useBottomSheet();
   const { toasts, showToast } = useToast();
+  const { showCopyToast } = useCopyToast(lang, showToast);
 
   const [headerHeight, setHeaderHeight] = useState(70);
   const [menuFilterBarHeight, setMenuFilterBarHeight] = useState(120);
@@ -129,10 +170,11 @@ const CardMenu = ({ onTabChange }: Props) => {
         overflow: "hidden",
       }}
     >
+      <MapAnimations />
       <div
         style={{
           flex: 1,
-          padding: `${menuFilterBarHeight + 8}px 40px 8px`,
+          padding: `${menuFilterBarHeight + 16}px 40px 80px`,
           position: "relative",
           minHeight: 0,
         }}
@@ -141,13 +183,11 @@ const CardMenu = ({ onTabChange }: Props) => {
           ref={deckRef}
           cards={orderedCards}
           lang={lang}
-          onAdvance={advance}
+          onAdvance={(dir) => (dir === 1 ? advance() : goBack())}
+          onCardClick={(item) => openShopModal(item.restaurant)}
+          isAtStart={offset === 0}
         />
       </div>
-      <SwipeActionButtons
-        onDislike={() => deckRef.current?.swipe()}
-        onLike={() => deckRef.current?.swipe()}
-      />
       <BottomTabBar activeTab="cards" onTabChange={onTabChange} />
 
       {/* 헤더 + 필터바 레이어 */}
@@ -156,9 +196,25 @@ const CardMenu = ({ onTabChange }: Props) => {
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          zIndex: 160,
+          zIndex: 500,
         }}
       >
+        <div
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 12,
+            right: 12,
+            borderRadius: 24,
+            height: menuFilterBarHeight,
+            background: "linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.25) 100%)",
+            backdropFilter: "blur(28px) saturate(180%) brightness(1.04)",
+            WebkitBackdropFilter: "blur(28px) saturate(180%) brightness(1.04)",
+            border: "1px solid rgba(255,255,255,0.45)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.10)",
+            pointerEvents: "none",
+          }}
+        />
         <HeaderSection
           searchQuery={searchQuery}
           showHint1={showHint1}
@@ -195,7 +251,7 @@ const CardMenu = ({ onTabChange }: Props) => {
           onClearPrice={handleClearPrice}
           onFilterBarResize={setMenuFilterBarHeight}
           headerOffset={headerHeight}
-          zIndex={161}
+          zIndex={501}
           isMapTab={false}
         />
       </div>
@@ -244,6 +300,21 @@ const CardMenu = ({ onTabChange }: Props) => {
           onSheetReady={filterSheetReady}
           onOverlayReady={filterOverlayReady}
           onDragStart={filterSheetDragStart}
+        />
+      )}
+
+      {selectedRestaurant && shopSheetOpen && (
+        <ShopDetailModal
+          restaurant={selectedRestaurant}
+          isScrolledToBottom={isScrolledToBottom}
+          modalScrollRef={modalScrollRef}
+          onClose={closeShopModal}
+          onModalScroll={handleModalScroll}
+          onSheetReady={shopSheetReady}
+          onOverlayReady={shopOverlayReady}
+          onDragStart={shopDragStart}
+          onScrollAreaTouchStart={onScrollAreaTouchStart}
+          onCopyToast={showCopyToast}
         />
       )}
     </div>

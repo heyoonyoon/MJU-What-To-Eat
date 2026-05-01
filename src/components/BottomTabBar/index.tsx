@@ -32,9 +32,11 @@ const BottomTabBar = ({ activeTab, onTabChange }: Props) => {
         right: 0,
         zIndex: 600,
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        ...glassStyle("light"),
+        ...(activeTab === "cards"
+          ? { background: "#ffffff", backdropFilter: "none", WebkitBackdropFilter: "none" }
+          : glassStyle("light")),
         borderRadius: 0,
-        borderTop: "1px solid rgba(255,255,255,0.45)",
+        borderTop: activeTab === "cards" ? "1px solid #ebebeb" : "1px solid rgba(255,255,255,0.45)",
         borderLeft: "none",
         borderRight: "none",
         borderBottom: "none",

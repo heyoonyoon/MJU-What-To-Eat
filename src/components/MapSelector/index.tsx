@@ -305,7 +305,7 @@ export default function MapSelector({ initialTab = "map", onTabChange }: Props) 
       )}
 
       {activeTab === "menu" && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
+        <div style={{ position: "absolute", inset: 0, zIndex: 1, background: "#f2f2f7" }}>
           <MenuView
             filteredList={menuViewList}
             filteredMenuIds={displayMenuIds}
